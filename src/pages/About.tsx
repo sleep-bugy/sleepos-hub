@@ -105,7 +105,7 @@ export default function About() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              onClick={() => window.open("https://discord.gg/projectsleep", "_blank")}
+              onClick={() => window.open("https://discord.gg/sK433E4jq", "_blank")}
             >
               <MessageCircle className="h-5 w-5 mr-2" />
               {t("about.discord")}
@@ -113,7 +113,7 @@ export default function About() {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => window.open("https://t.me/projectsleep", "_blank")}
+              onClick={() => window.open("https://t.me/SleepOsUser", "_blank")}
             >
               <Send className="h-5 w-5 mr-2" />
               {t("about.telegram")}

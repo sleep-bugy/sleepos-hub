@@ -25,9 +25,11 @@ export const Header = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-white font-bold text-sm">PS</span>
-            </div>
+            <img
+              src="/logo.png"
+              alt="Project Sleep Logo"
+              className="h-8 w-8 object-contain"
+            />
             <span className="font-bold text-xl hidden sm:inline-block">
               Project Sleep
             </span>

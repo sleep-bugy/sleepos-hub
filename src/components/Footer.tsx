@@ -12,9 +12,11 @@ export const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white font-bold text-sm">PS</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Project Sleep Logo"
+                className="h-8 w-8 object-contain"
+              />
               <span className="font-bold text-xl">Project Sleep</span>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -56,7 +58,7 @@ export const Footer = () => {
               <Button
                 variant="outline"
                 className="justify-start"
-                onClick={() => window.open("https://discord.gg/projectsleep", "_blank")}
+                onClick={() => window.open("https://discord.gg/sK433E4jq", "_blank")}
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 {t("about.discord")}
@@ -64,7 +66,7 @@ export const Footer = () => {
               <Button
                 variant="outline"
                 className="justify-start"
-                onClick={() => window.open("https://t.me/projectsleep", "_blank")}
+                onClick={() => window.open("https://t.me/SleepOsUser", "_blank")}
               >
                 <Send className="h-4 w-4 mr-2" />
                 {t("about.telegram")}
