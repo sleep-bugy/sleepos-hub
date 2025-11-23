@@ -10,23 +10,23 @@ export default function About() {
   const values = [
     {
       icon: Users,
-      title: "Community First",
-      description: "Built by the community, for the community",
+      title: t("about.values.community.title"),
+      description: t("about.values.community.description"),
     },
     {
       icon: Heart,
-      title: "Open Source",
-      description: "Transparent development and collaboration",
+      title: t("about.values.opensource.title"),
+      description: t("about.values.opensource.description"),
     },
     {
       icon: Code,
-      title: "Quality Code",
-      description: "Clean, maintainable, and well-tested",
+      title: t("about.values.quality.title"),
+      description: t("about.values.quality.description"),
     },
     {
       icon: Zap,
-      title: "Performance",
-      description: "Optimized for speed and efficiency",
+      title: t("about.values.performance.title"),
+      description: t("about.values.performance.description"),
     },
   ];
 
@@ -61,10 +61,7 @@ export default function About() {
                 {t("about.missionText")}
               </p>
               <p>
-                Project Sleep was born from a passion for Android customization and a desire to
-                create ROMs that prioritize user experience, stability, and performance. We believe
-                that everyone deserves access to high-quality custom ROMs that enhance their device
-                rather than compromise it.
+                {t("about.description")}
               </p>
             </CardContent>
           </Card>
@@ -103,8 +100,7 @@ export default function About() {
         >
           <h2 className="text-3xl font-bold mb-4">{t("about.community")}</h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of users in our vibrant community. Get support, share your
-            experiences, and connect with fellow Project Sleep enthusiasts.
+            {t("about.community.description")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button

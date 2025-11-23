@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminLayout } from "@/components/AdminLayout";
 import Home from "./pages/Home";
 import Features from "./pages/Features";
 import Download from "./pages/Download";
@@ -13,6 +15,12 @@ import Team from "./pages/Team";
 import About from "./pages/About";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminDevices from "./pages/admin/Devices";
+import AdminRoms from "./pages/admin/Roms";
+import AdminApplications from "./pages/admin/Applications";
+import AdminChangelogs from "./pages/admin/Changelogs";
+import AdminSettings from "./pages/admin/Settings";
 import "./i18n";
 
 const queryClient = new QueryClient();
@@ -34,6 +42,51 @@ const App = () => (
                 <Route path="/team" element={<Team />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/login" element={<Login />} />
+
+                {/* Admin Routes */}
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <AdminDashboard />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/devices" element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <AdminDevices />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/roms" element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <AdminRoms />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/applications" element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <AdminApplications />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/changelogs" element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <AdminChangelogs />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/settings" element={
+                  <ProtectedRoute>
+                    <AdminLayout>
+                      <AdminSettings />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                } />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

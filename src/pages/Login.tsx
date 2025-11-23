@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,18 +10,32 @@ import { Lock } from "lucide-react";
 
 export default function Login() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/admin";
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // This would connect to your backend authentication
-    toast({
-      title: t("auth.adminOnly"),
-      description: "Authentication feature will be connected to backend",
-    });
+    setIsLoading(true);
+
+    // Mock authentication - in a real app, this would be an API call
+    // For demo purposes, we'll allow any email/password combination
+    setTimeout(() => {
+      // Set a mock admin token
+      localStorage.setItem("adminToken", "mock-admin-token");
+
+      toast({
+        title: "Login Successful",
+        description: "Welcome back, admin!",
+      });
+
+      setIsLoading(false);
+      navigate(from, { replace: true });
+    }, 1500);
   };
 
   return (
@@ -43,6 +58,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@projectsleep.com"
                   required
                 />
               </div>
@@ -53,11 +69,12 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" size="lg">
-                {t("auth.signIn")}
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? "Signing in..." : t("auth.signIn")}
               </Button>
             </form>
           </CardContent>

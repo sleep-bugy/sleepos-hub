@@ -1,75 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Search, Download as DownloadIcon, FileText } from "lucide-react";
 import { motion } from "framer-motion";
-
-// Mock ROM data
-const mockRoms = [
-  {
-    id: 1,
-    device: "Xiaomi Mi 9",
-    model: "cepheus",
-    osType: "sleepos",
-    version: "v2.3.1",
-    downloads: 1234,
-    uploadDate: "2025-11-15",
-    fileSize: "1.2 GB",
-    changelog: "# v2.3.1\n- Fixed battery drain\n- Improved performance\n- Updated security patches",
-  },
-  {
-    id: 2,
-    device: "OnePlus 7 Pro",
-    model: "guacamole",
-    osType: "aosp",
-    version: "v1.5.0",
-    downloads: 892,
-    uploadDate: "2025-11-10",
-    fileSize: "980 MB",
-    changelog: "# v1.5.0\n- Pure AOSP experience\n- Latest Android updates",
-  },
-  {
-    id: 3,
-    device: "Samsung Galaxy S10",
-    model: "beyond1lte",
-    osType: "port",
-    version: "v3.0.2",
-    downloads: 567,
-    uploadDate: "2025-11-12",
-    fileSize: "1.4 GB",
-    changelog: "# v3.0.2\n- Ported OneUI features\n- Camera improvements",
-  },
-];
+import { Rom } from "@/types";
+import { getRoms } from "@/dataService";
 
 export default function Download() {
   const { t } = useTranslation();
+  const [roms, setRoms] = useState<Rom[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const [selectedRom, setSelectedRom] = useState<Rom | null>(null);
+  const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+
+  useEffect(() => {
+    setRoms(getRoms().filter(rom => rom.status === "Active"));
+  }, []);
 
   const filters = [
     { value: "all", label: t("download.filter.all") },
-    { value: "sleepos", label: t("download.filter.sleepos") },
-    { value: "aosp", label: t("download.filter.aosp") },
-    { value: "port", label: t("download.filter.port") },
+    { value: "SleepOS", label: t("download.filter.sleepos") },
+    { value: "AOSP", label: t("download.filter.aosp") },
+    { value: "Port", label: t("download.filter.port") },
   ];
 
-  const filteredRoms = mockRoms.filter((rom) => {
+  const filteredRoms = roms.filter((rom) => {
     const matchesSearch = rom.device.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         rom.model.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = selectedFilter === "all" || rom.osType === selectedFilter;
+                         rom.deviceCodename.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = selectedFilter === "all" || rom.romType === selectedFilter;
     return matchesSearch && matchesFilter;
   });
 
   const getOsTypeBadge = (osType: string) => {
     const colors = {
-      sleepos: "bg-blue-500",
-      aosp: "bg-green-500",
-      port: "bg-purple-500",
+      "SleepOS": "bg-blue-500",
+      "AOSP": "bg-green-500",
+      "Port": "bg-purple-500",
     };
     return colors[osType as keyof typeof colors] || "bg-gray-500";
+  };
+
+  const handleDownload = (rom: Rom) => {
+    if (rom.downloadUrl) {
+      window.open(rom.downloadUrl, "_blank");
+    }
+  };
+
+  const viewChangelog = (rom: Rom) => {
+    setSelectedRom(rom);
+    setIsChangelogOpen(true);
   };
 
   return (
@@ -84,7 +68,7 @@ export default function Download() {
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
             {t("download.title")}
           </h1>
-          
+
           {/* Search and Filters */}
           <div className="max-w-4xl mx-auto space-y-4 mt-8">
             <div className="relative">
@@ -125,10 +109,10 @@ export default function Download() {
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <CardTitle className="text-xl mb-1">{rom.device}</CardTitle>
-                      <CardDescription className="text-sm">{rom.model}</CardDescription>
+                      <CardDescription className="text-sm">{rom.deviceCodename}</CardDescription>
                     </div>
-                    <Badge className={`${getOsTypeBadge(rom.osType)} text-white`}>
-                      {rom.osType.toUpperCase()}
+                    <Badge className={`${getOsTypeBadge(rom.romType)} text-white`}>
+                      {rom.romType}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -140,20 +124,34 @@ export default function Download() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t("download.fileSize")}:</span>
-                      <span className="font-medium">{rom.fileSize}</span>
+                      <span className="font-medium">{rom.size}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t("download.downloads")}:</span>
                       <span className="font-medium">{rom.downloads.toLocaleString()}</span>
                     </div>
+                    {rom.notes && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{t("download.notes")}:</span>
+                        <span className="font-medium">{rom.notes}</span>
+                      </div>
+                    )}
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <Button className="w-full" size="lg">
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={() => handleDownload(rom)}
+                    >
                       <DownloadIcon className="h-4 w-4 mr-2" />
                       {t("download.download")}
                     </Button>
-                    <Button variant="outline" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => viewChangelog(rom)}
+                    >
                       <FileText className="h-4 w-4 mr-2" />
                       {t("download.changelog")}
                     </Button>
@@ -169,6 +167,35 @@ export default function Download() {
             <p className="text-xl text-muted-foreground">{t("common.noResults")}</p>
           </div>
         )}
+
+        {/* Changelog Dialog */}
+        <Dialog open={isChangelogOpen} onOpenChange={setIsChangelogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedRom?.device} - {selectedRom?.version} {t("download.changelog")}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedRom && (
+                <div>
+                  <h3 className="font-medium mb-2">{t("download.changelog")}</h3>
+                  <div className="bg-muted p-4 rounded-md max-h-96 overflow-y-auto whitespace-pre-wrap">
+                    {selectedRom.changelog || t("common.noResults")}
+                  </div>
+                </div>
+              )}
+              {selectedRom?.notes && (
+                <div>
+                  <h3 className="font-medium mb-2">{t("download.notes")}</h3>
+                  <div className="bg-muted p-4 rounded-md">
+                    {selectedRom.notes}
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

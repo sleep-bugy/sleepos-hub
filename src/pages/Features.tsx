@@ -9,38 +9,38 @@ export default function Features() {
   const features = [
     {
       icon: Battery,
-      title: "Battery Optimization",
-      description: "Advanced battery management for all-day usage",
+      title: t("features.battery.title"),
+      description: t("features.battery.description"),
       color: "from-green-500 to-emerald-500",
     },
     {
       icon: Cpu,
-      title: "Performance Tuning",
-      description: "Optimized kernel and system for peak performance",
+      title: t("features.performance.title"),
+      description: t("features.performance.description"),
       color: "from-blue-500 to-cyan-500",
     },
     {
       icon: Lock,
-      title: "Privacy & Security",
-      description: "Enhanced security features and privacy controls",
+      title: t("features.security.title"),
+      description: t("features.security.description"),
       color: "from-purple-500 to-pink-500",
     },
     {
       icon: Palette,
-      title: "Customization",
-      description: "Extensive theming and customization options",
+      title: t("features.customization.title"),
+      description: t("features.customization.description"),
       color: "from-orange-500 to-red-500",
     },
     {
       icon: Smartphone,
-      title: "Modern UI",
-      description: "Clean, intuitive interface with smooth animations",
+      title: t("features.ui.title"),
+      description: t("features.ui.description"),
       color: "from-indigo-500 to-purple-500",
     },
     {
       icon: Wifi,
-      title: "Connectivity",
-      description: "Improved WiFi and Bluetooth stability",
+      title: t("features.connectivity.title"),
+      description: t("features.connectivity.description"),
       color: "from-teal-500 to-blue-500",
     },
   ];
@@ -81,8 +81,7 @@ export default function Features() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Experience the best of Android with our carefully crafted features
-                    designed to enhance your daily usage.
+                    {t("features.description")}
                   </p>
                 </CardContent>
               </Card>
@@ -98,34 +97,30 @@ export default function Features() {
           transition={{ duration: 0.6 }}
           className="mt-20 bg-card/50 rounded-2xl p-8 md:p-12"
         >
-          <h2 className="text-3xl font-bold mb-8 text-center">What Makes Us Different</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center">{t("features.difference.title")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-xl font-semibold mb-4">Regular Updates</h3>
+              <h3 className="text-xl font-semibold mb-4">{t("features.difference.updates.title")}</h3>
               <p className="text-muted-foreground">
-                We provide frequent updates with the latest security patches and features
-                to keep your device secure and up-to-date.
+                {t("features.difference.updates.description")}
               </p>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-4">Active Community</h3>
+              <h3 className="text-xl font-semibold mb-4">{t("features.difference.community.title")}</h3>
               <p className="text-muted-foreground">
-                Join thousands of users in our Discord and Telegram communities for
-                support, tips, and ROM development discussions.
+                {t("features.difference.community.description")}
               </p>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-4">Open Source</h3>
+              <h3 className="text-xl font-semibold mb-4">{t("features.difference.opensource.title")}</h3>
               <p className="text-muted-foreground">
-                Our ROMs are built on open-source foundations, ensuring transparency
-                and community collaboration.
+                {t("features.difference.opensource.description")}
               </p>
             </div>
             <div>
-              <h3 className="text-xl font-semibold mb-4">Device Support</h3>
+              <h3 className="text-xl font-semibold mb-4">{t("features.difference.devicesupport.title")}</h3>
               <p className="text-muted-foreground">
-                We support a wide range of devices from various manufacturers, ensuring
-                more users can experience Project Sleep.
+                {t("features.difference.devicesupport.description")}
               </p>
             </div>
           </div>

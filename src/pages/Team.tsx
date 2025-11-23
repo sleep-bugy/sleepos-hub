@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Github, Mail } from "lucide-react";
 import { GB, ID, IN, RU } from "country-flag-icons/react/3x2";
+import { addApplication } from "@/dataService";
+import { Application } from "@/types";
 
 const teamMembers = [
   {
@@ -46,25 +48,45 @@ export default function Team() {
     portfolio: "",
     role: "",
     message: "",
+    cv: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Here you would send the application to your backend
-    toast({
-      title: t("team.apply.success"),
-      description: "We'll review your application and get back to you soon!",
-    });
 
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      portfolio: "",
-      role: "",
-      message: "",
-    });
+    try {
+      const newApplication: Omit<Application, 'id' | 'date' | 'status'> = {
+        name: formData.name,
+        email: formData.email,
+        portfolio: formData.portfolio,
+        role: formData.role,
+        message: formData.message,
+        cv: formData.cv || undefined,
+      };
+
+      addApplication(newApplication);
+
+      toast({
+        title: t("team.apply.success"),
+        description: "We'll review your application and get back to you soon!",
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        portfolio: "",
+        role: "",
+        message: "",
+        cv: "",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit application. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -180,6 +202,18 @@ export default function Team() {
                     onChange={handleChange}
                     placeholder="e.g., Developer, Designer, Maintainer"
                     required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cv">{t("team.apply.cv")}</Label>
+                  <Input
+                    id="cv"
+                    name="cv"
+                    type="url"
+                    value={formData.cv}
+                    onChange={handleChange}
+                    placeholder="https://example.com/cv.pdf (Optional)"
                   />
                 </div>
 
