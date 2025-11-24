@@ -177,7 +177,7 @@ export default function AdminDevices() {
                 Add Device
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingDevice ? "Edit Device" : "Add New Device"}</DialogTitle>
               </DialogHeader>

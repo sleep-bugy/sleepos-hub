@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 import { 
   Plus, 
@@ -219,7 +219,7 @@ export default function AdminRoms() {
                 Add ROM
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingRom ? "Edit ROM" : "Add New ROM"}</DialogTitle>
               </DialogHeader>
@@ -430,7 +430,7 @@ export default function AdminRoms() {
                                 <FileText className="h-4 w-4" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle>ROM Notes for {rom.version}</DialogTitle>
                               </DialogHeader>

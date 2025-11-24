@@ -211,7 +211,7 @@ export default function AdminChangelogs() {
                 Add Changelog
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingChangelog ? "Edit Changelog" : "Add New Changelog"}</DialogTitle>
               </DialogHeader>
@@ -370,9 +370,24 @@ export default function AdminChangelogs() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
-                          <FileText className="h-4 w-4" />
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Changelog Details for {changelog.version}</DialogTitle>
+                            </DialogHeader>
+                            <div className="py-4">
+                              <h3 className="font-semibold mb-2">Changelog Content</h3>
+                              <pre className="whitespace-pre-wrap bg-muted p-4 rounded-lg text-sm font-mono max-h-60 overflow-y-auto">
+                                {changelog.changelog}
+                              </pre>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                         <Button 
                           variant="outline" 
                           size="sm"
