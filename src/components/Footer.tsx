@@ -53,7 +53,7 @@ export const Footer = () => {
 
           {/* Community */}
           <div>
-            <h3 className="font-semibold mb-4">{t("about.community")}</h3>
+            <h3 className="font-semibold mb-4">{t("about.community.title")}</h3>
             <div className="flex flex-col space-y-2">
               <Button
                 variant="outline"
