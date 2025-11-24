@@ -3,42 +3,38 @@ export const config = {
   runtime: 'edge',
 };
 
-// For a serverless function, we cannot maintain state between requests
-// This would require a real database in production
-// For this demo, we'll return the same mock data for read operations
-// and only handle the actual create/update/delete operations in a real implementation
+// Import database operations
+import { dbOperations } from '@/lib/database';
 
 export default async function handler(request: Request) {
   const url = new URL(request.url);
   const path = url.pathname;
-  const pathParts = path.split('/').filter(Boolean);
-
+  const pathSegments = path.split('/').filter(Boolean);
+  
   // Extract the device identifier and potential action
-  if (pathParts.length >= 3 && pathParts[0] === 'api' && pathParts[1] === 'devices') {
-    const deviceIdentifier = pathParts[2];
-    const action = pathParts[3]; // Could be 'roms' or undefined
-
+  if (pathSegments.length >= 3 && pathSegments[0] === 'api' && pathSegments[1] === 'devices') {
+    const deviceIdentifier = pathSegments[2];
+    const action = pathSegments[3]; // Could be 'roms' or undefined
+    
     const { method } = request;
 
     if (action === 'roms') {
       // Handle /api/devices/[codename]/roms
-      // For demo purposes, we'll return a fixed response for roms
-      // In a real implementation, this would connect to a database
       if (method === 'GET') {
-        // Return empty array or fixed mock data for GET
-        return new Response(JSON.stringify([]), {
+        // Get ROMs for specific device by codename
+        const roms = await dbOperations.roms.getByDevice(deviceIdentifier);
+        return new Response(JSON.stringify(roms), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
       } else if (method === 'POST') {
-        // Simulate adding a ROM
+        // Add ROM to specific device
         const newRomData = await request.json();
-        const newRom = {
+        const newRom = await dbOperations.roms.create({
           ...newRomData,
-          id: Date.now(), // Using timestamp as ID in this demo
-          downloads: 0,
-        };
-
+          deviceCodename: deviceIdentifier
+        });
+        
         return new Response(JSON.stringify(newRom), {
           status: 201,
           headers: { 'Content-Type': 'application/json' }
@@ -46,27 +42,55 @@ export default async function handler(request: Request) {
       }
     } else {
       // Handle /api/devices/[id] where deviceIdentifier is the numeric ID
-      // For demo purposes, we'll return fixed mock data for GET
-      // and handle creation/updates differently
+      const deviceId = parseInt(deviceIdentifier);
+      
+      if (isNaN(deviceId)) {
+        return new Response(JSON.stringify({ error: 'Invalid device ID' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
       if (method === 'GET') {
-        // Return a specific device or 404 if not found
-        // In a real implementation, query the database
-        return new Response(JSON.stringify({ error: "Device not found in demo mode" }), {
-          status: 404,
+        // For getting a specific device by ID, we'll need to enhance our dbOperations
+        // to query devices by ID, but for now we'll get all and filter
+        const allDevices = await dbOperations.devices.getAll();
+        const device = allDevices.find(d => d.id === deviceId);
+        
+        if (!device) {
+          return new Response(JSON.stringify({ error: 'Device not found' }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        
+        return new Response(JSON.stringify(device), {
+          status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
       } else if (method === 'PUT') {
         // Update an existing device
-        const updatedData = await request.json();
-        return new Response(JSON.stringify(updatedData), {
+        const updateData = await request.json();
+        const updatedDevice = await dbOperations.devices.update(deviceId, updateData);
+        
+        return new Response(JSON.stringify(updatedDevice), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
       } else if (method === 'DELETE') {
         // Delete a device
-        return new Response(null, {
-          status: 204
-        });
+        const success = await dbOperations.devices.delete(deviceId);
+        
+        if (success) {
+          return new Response(null, {
+            status: 204
+          });
+        } else {
+          return new Response(JSON.stringify({ error: 'Failed to delete device' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
       }
     }
   }
