@@ -1,19 +1,16 @@
-// api/devices/index.ts - Handle all devices data
+// api/devices/index.ts - Handle all devices data (for GET and POST)
 export const config = {
   runtime: 'edge',
 };
 
 export default async function handler(request: Request) {
-  // This is a placeholder implementation. In a real application, you would connect to a database.
-  // For now, we're using a simple array, but in production this would connect to a database.
-  
   const { method } = request;
   
-  // Placeholder for data storage (in real app, this would be a database)
-  // @ts-ignore
-  if (!global.ps_devices) {
-    // @ts-ignore
-    global.ps_devices = [
+  if (method === 'GET') {
+    // Return all devices
+    // For demo purposes, returning fixed mock data
+    // In a real implementation, this would connect to a database
+    return new Response(JSON.stringify([
       {
         id: 1,
         name: "Xiaomi Mi 9",
@@ -37,36 +34,26 @@ export default async function handler(request: Request) {
           { id: 5, device: "POCO X3 NFC", deviceCodename: "surya", maintainer: "Sarah Lee", romType: "Port", version: "v3.0.1", size: "2.1 GB", downloads: 123, status: "Active", uploadDate: "2025-11-15", downloadUrl: "https://example.com/surya-port-v3.0.1.zip", changelog: "# v3.0.1\n- Ported OnePlus camera features\n- Added OnePlus gallery app" }
         ]
       }
-    ];
+    ]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } else if (method === 'POST') {
+    // Add a new device
+    // In a real implementation, this would connect to a database
+    const newDeviceData = await request.json();
+    const newDevice = {
+      ...newDeviceData,
+      id: Date.now(), // Using timestamp as ID in this demo
+      roms: [],
+      lastUpdate: new Date().toISOString().split('T')[0],
+    };
+    
+    return new Response(JSON.stringify(newDevice), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
-  switch (method) {
-    case 'GET':
-      // @ts-ignore
-      return new Response(JSON.stringify(global.ps_devices), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-    case 'POST':
-      const body = await request.json();
-      // @ts-ignore
-      const newDevice = {
-        ...body,
-        id: Math.max(0, ...global.ps_devices.map((d: any) => d.id)) + 1,
-        roms: [],
-        lastUpdate: new Date().toISOString().split('T')[0],
-      };
-      
-      // @ts-ignore
-      global.ps_devices.push(newDevice);
-      
-      return new Response(JSON.stringify(newDevice), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-    default:
-      return new Response(null, { status: 405 });
-  }
+  return new Response(null, { status: 405 });
 }
