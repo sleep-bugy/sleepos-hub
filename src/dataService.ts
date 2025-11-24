@@ -1,23 +1,35 @@
 // dataService.ts
 import { Device, Rom, Application, Changelog, SiteSettings, User } from './types';
-import { dbOperations } from './lib/database';
 
-// Using direct database operations instead of API calls for Supabase integration
-// This is more efficient and reliable than making HTTP requests to our own API
+// API base URL - will use relative paths for Vercel deployment
+const API_BASE = '';
+
+// Function to make API calls
+async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+  }
+  
+  if (response.status === 204) {
+    // No content response
+    return null as T;
+  }
+  
+  return await response.json();
+}
 
 // Device functions
 export const getDevices = async (): Promise<Device[]> => {
   try {
-    const devices = await dbOperations.devices.getAll();
-    // Map the database response to fit the Device type expected by the app
-    return devices.map(device => ({
-      id: device.id,
-      name: device.name,
-      codename: device.codename,
-      status: device.status as 'Active' | 'Inactive',
-      lastUpdate: device.last_update,
-      roms: device.roms || [] // Default to empty array if null
-    }));
+    return await apiCall<Device[]>('/api/devices');
   } catch (error) {
     console.error('Error fetching devices:', error);
     // Return empty array in case of error
@@ -27,15 +39,10 @@ export const getDevices = async (): Promise<Device[]> => {
 
 export const addDevice = async (device: Omit<Device, 'id' | 'roms' | 'lastUpdate'>): Promise<Device> => {
   try {
-    const result = await dbOperations.devices.create(device);
-    return {
-      id: result.id,
-      name: result.name,
-      codename: result.codename,
-      status: result.status as 'Active' | 'Inactive',
-      lastUpdate: result.last_update,
-      roms: result.roms || []
-    };
+    return await apiCall<Device>('/api/devices', {
+      method: 'POST',
+      body: JSON.stringify(device),
+    });
   } catch (error) {
     console.error('Error adding device:', error);
     throw error;
@@ -44,15 +51,10 @@ export const addDevice = async (device: Omit<Device, 'id' | 'roms' | 'lastUpdate
 
 export const updateDevice = async (device: Device): Promise<Device> => {
   try {
-    const result = await dbOperations.devices.update(device.id, device);
-    return {
-      id: result.id,
-      name: result.name,
-      codename: result.codename,
-      status: result.status as 'Active' | 'Inactive',
-      lastUpdate: result.last_update,
-      roms: result.roms || []
-    };
+    return await apiCall<Device>(`/api/devices/${device.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(device),
+    });
   } catch (error) {
     console.error('Error updating device:', error);
     throw error;
@@ -61,7 +63,9 @@ export const updateDevice = async (device: Device): Promise<Device> => {
 
 export const deleteDevice = async (id: number): Promise<boolean> => {
   try {
-    await dbOperations.devices.delete(id);
+    await apiCall(`/api/devices/${id}`, {
+      method: 'DELETE',
+    });
     return true;
   } catch (error) {
     console.error('Error deleting device:', error);
@@ -72,11 +76,7 @@ export const deleteDevice = async (id: number): Promise<boolean> => {
 // ROM functions within devices
 export const getRoms = async (): Promise<Rom[]> => {
   try {
-    // Get all devices and flatten their ROMs
-    const devices = await getDevices();
-    return devices.flatMap(device =>
-      Array.isArray(device.roms) ? device.roms.map(rom => ({...rom, deviceId: device.id})) : []
-    );
+    return await apiCall<Rom[]>('/api/roms');
   } catch (error) {
     console.error('Error fetching roms:', error);
     return [];
@@ -85,11 +85,7 @@ export const getRoms = async (): Promise<Rom[]> => {
 
 export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> => {
   try {
-    // Fetch all devices and filter for the specific codename
-    // Since Vercel doesn't allow multiple files with different parameter patterns,
-    // we handle device-specific roms in the [id].ts file
-    const allRoms = await getRoms();
-    return allRoms.filter(rom => rom.deviceCodename === deviceCodename);
+    return await apiCall<Rom[]>(`/api/devices/${deviceCodename}/roms`);
   } catch (error) {
     console.error('Error fetching roms for device:', error);
     return [];
@@ -98,35 +94,10 @@ export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> =
 
 export const addRomToDevice = async (deviceCodename: string, rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename'>): Promise<Rom | null> => {
   try {
-    const romData = {
-      deviceCodename: deviceCodename,
-      romType: rom.romType,
-      version: rom.version,
-      size: rom.size,
-      maintainer: rom.maintainer,
-      downloadUrl: rom.downloadUrl,
-      changelog: rom.changelog,
-      notes: rom.notes,
-      status: rom.status,
-      uploadDate: rom.uploadDate
-    };
-
-    const result = await dbOperations.roms.create(romData);
-    return {
-      id: result.id,
-      device: result.device || "",
-      deviceCodename: result.device_codename,
-      maintainer: result.maintainer,
-      romType: result.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: result.version,
-      size: result.size,
-      downloads: result.downloads || 0,
-      status: result.status as 'Active' | 'Inactive',
-      uploadDate: result.upload_date,
-      downloadUrl: result.download_url,
-      changelog: result.changelog,
-      notes: result.notes || undefined
-    };
+    return await apiCall<Rom>(`/api/devices/${deviceCodename}/roms`, {
+      method: 'POST',
+      body: JSON.stringify(rom),
+    });
   } catch (error) {
     console.error('Error adding rom to device:', error);
     return null;
@@ -134,16 +105,16 @@ export const addRomToDevice = async (deviceCodename: string, rom: Omit<Rom, 'id'
 };
 
 export const updateRomForDevice = async (deviceCodename: string, rom: Rom): Promise<Rom | null> => {
-  // The database operations don't currently support updating ROMs directly
-  // This would need to be implemented in the dbOperations
-  console.error('updateRomForDevice not implemented in database operations');
+  // The API doesn't support updating individual ROMs directly
+  // This would need to be implemented in the API
+  console.error('updateRomForDevice not implemented in API');
   return null;
 };
 
 export const deleteRomFromDevice = async (deviceCodename: string, romId: number): Promise<boolean> => {
-  // The database operations don't currently support deleting ROMs directly
-  // This would need to be implemented in the dbOperations
-  console.error('deleteRomFromDevice not implemented in database operations');
+  // The API doesn't support deleting individual ROMs directly
+  // This would need to be implemented in the API
+  console.error('deleteRomFromDevice not implemented in API');
   return false;
 };
 
@@ -203,19 +174,7 @@ export const getActiveDevices = async (): Promise<Device[]> => {
 // Application functions
 export const getApplications = async (): Promise<Application[]> => {
   try {
-    const applications = await dbOperations.applications.getAll();
-    // Map the database response to fit the Application type expected by the app
-    return applications.map(app => ({
-      id: app.id,
-      name: app.name,
-      email: app.email,
-      role: app.role,
-      portfolio: app.portfolio,
-      message: app.message,
-      status: app.status as 'Pending' | 'Reviewed' | 'Accepted' | 'Rejected',
-      date: app.date,
-      cv: app.cv || undefined
-    }));
+    return await apiCall<Application[]>('/api/applications');
   } catch (error) {
     console.error('Error fetching applications:', error);
     return [];
@@ -224,27 +183,10 @@ export const getApplications = async (): Promise<Application[]> => {
 
 export const addApplication = async (application: Omit<Application, 'id' | 'date' | 'status'>): Promise<Application> => {
   try {
-    const appData = {
-      name: application.name,
-      email: application.email,
-      role: application.role,
-      portfolio: application.portfolio,
-      message: application.message,
-      cv: application.cv
-    };
-
-    const result = await dbOperations.applications.create(appData);
-    return {
-      id: result.id,
-      name: result.name,
-      email: result.email,
-      role: result.role,
-      portfolio: result.portfolio,
-      message: result.message,
-      status: result.status as 'Pending' | 'Reviewed' | 'Accepted' | 'Rejected',
-      date: result.date,
-      cv: result.cv || undefined
-    };
+    return await apiCall<Application>('/api/applications', {
+      method: 'POST',
+      body: JSON.stringify(application),
+    });
   } catch (error) {
     console.error('Error adding application:', error);
     throw error;
@@ -253,18 +195,10 @@ export const addApplication = async (application: Omit<Application, 'id' | 'date
 
 export const updateApplication = async (application: Application): Promise<Application> => {
   try {
-    const result = await dbOperations.applications.update(application.id, application);
-    return {
-      id: result.id,
-      name: result.name,
-      email: result.email,
-      role: result.role,
-      portfolio: result.portfolio,
-      message: result.message,
-      status: result.status as 'Pending' | 'Reviewed' | 'Accepted' | 'Rejected',
-      date: result.date,
-      cv: result.cv || undefined
-    };
+    return await apiCall<Application>(`/api/applications/${application.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(application),
+    });
   } catch (error) {
     console.error('Error updating application:', error);
     throw error;
@@ -274,17 +208,7 @@ export const updateApplication = async (application: Application): Promise<Appli
 // Changelog functions
 export const getChangelogs = async (): Promise<Changelog[]> => {
   try {
-    const changelogs = await dbOperations.changelogs.getAll();
-    // Map the database response to fit the Changelog type expected by the app
-    return changelogs.map(changelog => ({
-      id: changelog.id,
-      device: changelog.device,
-      romType: changelog.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: changelog.version,
-      date: changelog.date,
-      changelog: changelog.changelog,
-      status: changelog.status as 'Draft' | 'Published'
-    }));
+    return await apiCall<Changelog[]>('/api/changelogs');
   } catch (error) {
     console.error('Error fetching changelogs:', error);
     return [];
@@ -293,25 +217,10 @@ export const getChangelogs = async (): Promise<Changelog[]> => {
 
 export const addChangelog = async (changelog: Omit<Changelog, 'id'>): Promise<Changelog> => {
   try {
-    const changelogData = {
-      device: changelog.device,
-      romType: changelog.romType,
-      version: changelog.version,
-      date: changelog.date,
-      changelog: changelog.changelog,
-      status: changelog.status
-    };
-
-    const result = await dbOperations.changelogs.create(changelogData);
-    return {
-      id: result.id,
-      device: result.device,
-      romType: result.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: result.version,
-      date: result.date,
-      changelog: result.changelog,
-      status: result.status as 'Draft' | 'Published'
-    };
+    return await apiCall<Changelog>('/api/changelogs', {
+      method: 'POST',
+      body: JSON.stringify(changelog),
+    });
   } catch (error) {
     console.error('Error adding changelog:', error);
     throw error;
@@ -319,33 +228,33 @@ export const addChangelog = async (changelog: Omit<Changelog, 'id'>): Promise<Ch
 };
 
 export const updateChangelog = async (changelog: Changelog): Promise<Changelog> => {
-  // The database operations don't currently support updating changelogs directly
-  // This would need to be implemented in the dbOperations
-  console.error('updateChangelog not implemented in database operations');
-  throw new Error('updateChangelog not implemented in database operations');
+  try {
+    return await apiCall<Changelog>(`/api/changelogs/${changelog.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(changelog),
+    });
+  } catch (error) {
+    console.error('Error updating changelog:', error);
+    throw error;
+  }
 };
 
 export const deleteChangelog = async (id: number): Promise<boolean> => {
-  // The database operations don't currently support deleting changelogs directly
-  // This would need to be implemented in the dbOperations
-  console.error('deleteChangelog not implemented in database operations');
-  return false;
+  try {
+    await apiCall(`/api/changelogs/${id}`, {
+      method: 'DELETE',
+    });
+    return true;
+  } catch (error) {
+    console.error('Error deleting changelog:', error);
+    return false;
+  }
 };
 
 // Settings functions
 export const getSettings = async (): Promise<SiteSettings> => {
   try {
-    const settings = await dbOperations.settings.get();
-    return {
-      siteName: settings.site_name,
-      siteDescription: settings.site_description,
-      contactEmail: settings.contact_email,
-      discordLink: settings.discord_link,
-      telegramLink: settings.telegram_link,
-      downloadServer: settings.download_server,
-      enableDownloads: settings.enable_downloads,
-      enableTeamApplications: settings.enable_team_applications,
-    };
+    return await apiCall<SiteSettings>('/api/settings');
   } catch (error) {
     console.error('Error fetching settings:', error);
     // Return default settings in case of error
@@ -364,28 +273,10 @@ export const getSettings = async (): Promise<SiteSettings> => {
 
 export const updateSettings = async (settings: SiteSettings): Promise<SiteSettings> => {
   try {
-    const settingsData = {
-      site_name: settings.siteName,
-      site_description: settings.siteDescription,
-      contact_email: settings.contactEmail,
-      discord_link: settings.discordLink,
-      telegram_link: settings.telegramLink,
-      download_server: settings.downloadServer,
-      enable_downloads: settings.enableDownloads,
-      enable_team_applications: settings.enableTeamApplications,
-    };
-
-    const result = await dbOperations.settings.update(settingsData);
-    return {
-      siteName: result.site_name,
-      siteDescription: result.site_description,
-      contactEmail: result.contact_email,
-      discordLink: result.discord_link,
-      telegramLink: result.telegram_link,
-      downloadServer: result.download_server,
-      enableDownloads: result.enable_downloads,
-      enableTeamApplications: result.enable_team_applications,
-    };
+    return await apiCall<SiteSettings>('/api/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
   } catch (error) {
     console.error('Error updating settings:', error);
     throw error;
@@ -395,16 +286,7 @@ export const updateSettings = async (settings: SiteSettings): Promise<SiteSettin
 // User functions
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const user = await dbOperations.users.get();
-    if (!user) {
-      return null;
-    }
-    return {
-      id: user.id,
-      email: user.email,
-      password: user.password,
-      role: user.role as 'admin' | 'moderator' | 'user'
-    };
+    return await apiCall<User>('/api/user');
   } catch (error) {
     console.error('Error fetching user:', error);
     return null;
@@ -413,20 +295,10 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
 export const updateUser = async (user: User): Promise<User> => {
   try {
-    const userData = {
-      id: user.id,
-      email: user.email,
-      password: user.password,
-      role: user.role
-    };
-
-    const result = await dbOperations.users.update(userData);
-    return {
-      id: result.id,
-      email: result.email,
-      password: result.password,
-      role: result.role as 'admin' | 'moderator' | 'user'
-    };
+    return await apiCall<User>('/api/user', {
+      method: 'PUT',
+      body: JSON.stringify(user),
+    });
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;

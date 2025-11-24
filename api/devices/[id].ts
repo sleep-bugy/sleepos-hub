@@ -3,9 +3,6 @@ export const config = {
   runtime: 'edge',
 };
 
-// Import database operations
-import { dbOperations } from '@/lib/database';
-
 export default async function handler(request: Request) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -22,18 +19,19 @@ export default async function handler(request: Request) {
       // Handle /api/devices/[codename]/roms
       if (method === 'GET') {
         // Get ROMs for specific device by codename
-        const roms = await dbOperations.roms.getByDevice(deviceIdentifier);
-        return new Response(JSON.stringify(roms), {
+        // For now, returning empty array - in production this would connect to database
+        return new Response(JSON.stringify([]), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
       } else if (method === 'POST') {
         // Add ROM to specific device
         const newRomData = await request.json();
-        const newRom = await dbOperations.roms.create({
+        const newRom = {
           ...newRomData,
-          deviceCodename: deviceIdentifier
-        });
+          id: Date.now(), // Using timestamp as ID in this demo
+          downloads: 0,
+        };
         
         return new Response(JSON.stringify(newRom), {
           status: 201,
@@ -43,7 +41,6 @@ export default async function handler(request: Request) {
     } else {
       // Handle /api/devices/[id] where deviceIdentifier is the numeric ID
       const deviceId = parseInt(deviceIdentifier);
-      
       if (isNaN(deviceId)) {
         return new Response(JSON.stringify({ error: 'Invalid device ID' }), {
           status: 400,
@@ -52,45 +49,39 @@ export default async function handler(request: Request) {
       }
       
       if (method === 'GET') {
-        // For getting a specific device by ID, we'll need to enhance our dbOperations
-        // to query devices by ID, but for now we'll get all and filter
-        const allDevices = await dbOperations.devices.getAll();
-        const device = allDevices.find(d => d.id === deviceId);
+        // For getting a specific device by ID, we'll return a mock device
+        // In production, this would connect to database
+        const mockDevice = {
+          id: deviceId,
+          name: "Mock Device " + deviceId,
+          codename: "mock" + deviceId,
+          status: "Active",
+          lastUpdate: new Date().toISOString().split('T')[0],
+          roms: []
+        };
         
-        if (!device) {
-          return new Response(JSON.stringify({ error: 'Device not found' }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        return new Response(JSON.stringify(device), {
+        return new Response(JSON.stringify(mockDevice), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
       } else if (method === 'PUT') {
         // Update an existing device
         const updateData = await request.json();
-        const updatedDevice = await dbOperations.devices.update(deviceId, updateData);
+        const updatedDevice = {
+          ...updateData,
+          id: deviceId
+        };
         
         return new Response(JSON.stringify(updatedDevice), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         });
       } else if (method === 'DELETE') {
-        // Delete a device
-        const success = await dbOperations.devices.delete(deviceId);
-        
-        if (success) {
-          return new Response(null, {
-            status: 204
-          });
-        } else {
-          return new Response(JSON.stringify({ error: 'Failed to delete device' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
+        // Delete a device - just return success for this demo
+        // In production, this would connect to a database
+        return new Response(null, {
+          status: 204
+        });
       }
     }
   }

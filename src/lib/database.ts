@@ -1,29 +1,35 @@
-// Database configuration for Supabase integration
-import { createClient } from '@supabase/supabase-js';
+// Database configuration for Supabase integration using direct fetch
+// This approach works better with Vercel Edge Functions
 
-// Supabase client initialization
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Create Supabase client
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Function to make API calls to Supabase REST API
+async function supabaseRequest(path: string, options: RequestInit = {}) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
 
-// Database operations
+  if (!response.ok) {
+    throw new Error(`Supabase request failed: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// Database operations using direct fetch to Supabase REST API
 export const dbOperations = {
   devices: {
     // Get all devices
     getAll: async () => {
       try {
-        const { data, error } = await supabase
-          .from('devices')
-          .select('*')
-          .order('id', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching devices:', error);
-          return [];
-        }
-
+        const data = await supabaseRequest('devices?select=*');
         return data || [];
       } catch (error) {
         console.error('Error fetching devices:', error);
@@ -34,23 +40,19 @@ export const dbOperations = {
     // Create a new device
     create: async (deviceData) => {
       try {
-        const { data, error } = await supabase
-          .from('devices')
-          .insert([{
+        const [data] = await supabaseRequest('devices', {
+          method: 'POST',
+          body: JSON.stringify({
             name: deviceData.name,
             codename: deviceData.codename,
             status: deviceData.status,
             last_update: new Date().toISOString().split('T')[0],
             roms: [] // Initialize with empty ROMs array
-          }])
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating device:', error);
-          throw error;
-        }
-
+          }),
+          headers: {
+            'Prefer': 'return=representation'
+          }
+        });
         return data;
       } catch (error) {
         console.error('Error creating device:', error);
@@ -61,23 +63,18 @@ export const dbOperations = {
     // Update a device
     update: async (id, deviceData) => {
       try {
-        const { data, error } = await supabase
-          .from('devices')
-          .update({
+        const [data] = await supabaseRequest(`devices?id=eq.${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
             name: deviceData.name,
             codename: deviceData.codename,
             status: deviceData.status,
             last_update: new Date().toISOString().split('T')[0]
-          })
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating device:', error);
-          throw error;
-        }
-
+          }),
+          headers: {
+            'Prefer': 'return=representation'
+          }
+        });
         return data;
       } catch (error) {
         console.error('Error updating device:', error);
@@ -88,16 +85,9 @@ export const dbOperations = {
     // Delete a device
     delete: async (id) => {
       try {
-        const { error } = await supabase
-          .from('devices')
-          .delete()
-          .eq('id', id);
-
-        if (error) {
-          console.error('Error deleting device:', error);
-          throw error;
-        }
-
+        await supabaseRequest(`devices?id=eq.${id}`, {
+          method: 'DELETE',
+        });
         return true;
       } catch (error) {
         console.error('Error deleting device:', error);
@@ -110,16 +100,7 @@ export const dbOperations = {
     // Get all ROMs
     getAll: async () => {
       try {
-        const { data, error } = await supabase
-          .from('roms')
-          .select('*')
-          .order('id', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching ROMs:', error);
-          return [];
-        }
-
+        const data = await supabaseRequest('roms?select=*');
         return data || [];
       } catch (error) {
         console.error('Error fetching ROMs:', error);
@@ -130,17 +111,7 @@ export const dbOperations = {
     // Get ROMs for specific device
     getByDevice: async (deviceCodename) => {
       try {
-        const { data, error } = await supabase
-          .from('roms')
-          .select('*')
-          .eq('device_codename', deviceCodename)
-          .order('id', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching ROMs for device:', error);
-          return [];
-        }
-
+        const data = await supabaseRequest(`roms?device_codename=eq.${deviceCodename}&select=*`);
         return data || [];
       } catch (error) {
         console.error('Error fetching ROMs for device:', error);
@@ -151,9 +122,9 @@ export const dbOperations = {
     // Create a new ROM
     create: async (romData) => {
       try {
-        const { data, error } = await supabase
-          .from('roms')
-          .insert([{
+        const [data] = await supabaseRequest('roms', {
+          method: 'POST',
+          body: JSON.stringify({
             device_codename: romData.deviceCodename,
             rom_type: romData.romType,
             version: romData.version,
@@ -165,15 +136,11 @@ export const dbOperations = {
             status: romData.status,
             upload_date: romData.uploadDate,
             downloads: 0 // Initialize with 0 downloads
-          }])
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating ROM:', error);
-          throw error;
-        }
-
+          }),
+          headers: {
+            'Prefer': 'return=representation'
+          }
+        });
         return data;
       } catch (error) {
         console.error('Error creating ROM:', error);
@@ -185,16 +152,7 @@ export const dbOperations = {
   applications: {
     getAll: async () => {
       try {
-        const { data, error } = await supabase
-          .from('applications')
-          .select('*')
-          .order('id', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching applications:', error);
-          return [];
-        }
-
+        const data = await supabaseRequest('applications?select=*');
         return data || [];
       } catch (error) {
         console.error('Error fetching applications:', error);
@@ -204,9 +162,9 @@ export const dbOperations = {
 
     create: async (appData) => {
       try {
-        const { data, error } = await supabase
-          .from('applications')
-          .insert([{
+        const [data] = await supabaseRequest('applications', {
+          method: 'POST',
+          body: JSON.stringify({
             name: appData.name,
             email: appData.email,
             role: appData.role,
@@ -215,15 +173,11 @@ export const dbOperations = {
             cv: appData.cv,
             status: 'Pending',
             date: new Date().toISOString().split('T')[0]
-          }])
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating application:', error);
-          throw error;
-        }
-
+          }),
+          headers: {
+            'Prefer': 'return=representation'
+          }
+        });
         return data;
       } catch (error) {
         console.error('Error creating application:', error);
@@ -233,9 +187,9 @@ export const dbOperations = {
 
     update: async (id, appData) => {
       try {
-        const { data, error } = await supabase
-          .from('applications')
-          .update({
+        const [data] = await supabaseRequest(`applications?id=eq.${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
             name: appData.name,
             email: appData.email,
             role: appData.role,
@@ -243,16 +197,11 @@ export const dbOperations = {
             message: appData.message,
             cv: appData.cv,
             status: appData.status
-          })
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating application:', error);
-          throw error;
-        }
-
+          }),
+          headers: {
+            'Prefer': 'return=representation'
+          }
+        });
         return data;
       } catch (error) {
         console.error('Error updating application:', error);
@@ -264,16 +213,7 @@ export const dbOperations = {
   changelogs: {
     getAll: async () => {
       try {
-        const { data, error } = await supabase
-          .from('changelogs')
-          .select('*')
-          .order('id', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching changelogs:', error);
-          return [];
-        }
-
+        const data = await supabaseRequest('changelogs?select=*');
         return data || [];
       } catch (error) {
         console.error('Error fetching changelogs:', error);
@@ -283,24 +223,20 @@ export const dbOperations = {
 
     create: async (changelogData) => {
       try {
-        const { data, error } = await supabase
-          .from('changelogs')
-          .insert([{
+        const [data] = await supabaseRequest('changelogs', {
+          method: 'POST',
+          body: JSON.stringify({
             device: changelogData.device,
             rom_type: changelogData.romType,
             version: changelogData.version,
             date: changelogData.date,
             changelog: changelogData.changelog,
             status: changelogData.status
-          }])
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating changelog:', error);
-          throw error;
-        }
-
+          }),
+          headers: {
+            'Prefer': 'return=representation'
+          }
+        });
         return data;
       } catch (error) {
         console.error('Error creating changelog:', error);
@@ -312,13 +248,11 @@ export const dbOperations = {
   settings: {
     get: async () => {
       try {
-        const { data, error } = await supabase
-          .from('settings')
-          .select('*')
-          .single();
+        const [data] = await supabaseRequest('settings?select=*', {
+          method: 'GET'
+        });
 
-        if (error) {
-          console.error('Error fetching settings:', error);
+        if (!data) {
           // Return default settings if not found
           return {
             id: 1,
@@ -353,20 +287,17 @@ export const dbOperations = {
 
     update: async (settingsData) => {
       try {
-        const { data, error } = await supabase
-          .from('settings')
-          .upsert([{
+        // For settings, we'll use upsert based on ID
+        const [data] = await supabaseRequest('settings', {
+          method: 'POST',
+          body: JSON.stringify({
             id: 1,
             ...settingsData
-          }])
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating settings:', error);
-          throw error;
-        }
-
+          }),
+          headers: {
+            'Prefer': 'return=representation, resolution=merge-duplicates'
+          }
+        });
         return data;
       } catch (error) {
         console.error('Error updating settings:', error);
@@ -378,16 +309,9 @@ export const dbOperations = {
   users: {
     get: async () => {
       try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .single();
-
-        if (error) {
-          console.error('Error fetching user:', error);
-          return null;
-        }
-
+        const [data] = await supabaseRequest('users?select=*&limit=1', {
+          method: 'GET'
+        });
         return data;
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -397,27 +321,24 @@ export const dbOperations = {
 
     update: async (userData) => {
       try {
-        const { data, error } = await supabase
-          .from('users')
-          .upsert([{
+        const [data] = await supabaseRequest('users', {
+          method: 'POST',
+          body: JSON.stringify({
             id: userData.id,
             email: userData.email,
             password: userData.password, // In production, this should be hashed
             role: userData.role
-          }])
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating user:', error);
-          throw error;
-        }
-
+          }),
+          headers: {
+            'Prefer': 'return=representation, resolution=merge-duplicates'
+          }
+        });
         return data;
       } catch (error) {
         console.error('Error updating user:', error);
         throw error;
       }
+    }
     }
   }
 };
