@@ -62,12 +62,26 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/cc011057-bad4-4941-bdf4-22b3749e1536) and click on Share -> Publish.
+This project can be deployed to any static hosting service like Vercel, Netlify, or GitHub Pages. Follow the deployment instructions in the documentation.
 
-## Can I connect a custom domain to my Lovable project?
+## What technology stack is used in this project?
+
+This project uses:
+- React 18 with TypeScript
+- Vite as build tool
+- Shadcn/ui for components
+- Tailwind CSS for styling
+- React Router DOM for routing
+- i18next for internationalization
+- Framer Motion for animations
+- Lucide React for icons
+
+## Can I customize the branding?
 
 Yes, you can!
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+To customize branding:
+1. Replace favicons in the public/ directory
+2. Update title and meta tags in index.html
+3. Modify colors in tailwind.config.ts
+4. Update texts in the i18n translation files
