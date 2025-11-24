@@ -1,11 +1,12 @@
 // dataService.ts
-import { Device, Rom, Application, Changelog, SiteSettings } from './types';
+import { Device, Rom, Application, Changelog, SiteSettings, User } from './types';
 
 const STORAGE_KEYS = {
   DEVICES: 'ps_devices',
   APPLICATIONS: 'ps_applications',
   CHANGELOGS: 'ps_changelogs',
   SETTINGS: 'ps_settings',
+  CURRENT_USER: 'ps_current_user',
 };
 
 // Initialize with default data if not exists
@@ -13,6 +14,17 @@ const initializeStorage = () => {
   // Remove old storage keys that are no longer used to prevent conflicts
   if (localStorage.getItem('ps_roms')) {
     localStorage.removeItem('ps_roms');
+  }
+
+  // Initialize current user if not exists
+  if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
+    const defaultUser: User = {
+      id: 1,
+      email: "admin@projectsleep.com",
+      password: "admin123", // In production, this should be a hashed password
+      role: "admin"
+    };
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(defaultUser));
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.DEVICES)) {
@@ -485,6 +497,25 @@ export const getSettings = (): SiteSettings => {
 export const updateSettings = (settings: SiteSettings): SiteSettings => {
   localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   return settings;
+};
+
+// User functions
+export const getCurrentUser = (): User | null => {
+  const data = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+  if (!data) return null;
+
+  try {
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error parsing user from localStorage:', error);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    return null;
+  }
+};
+
+export const updateUser = (user: User): User => {
+  localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+  return user;
 };
 
 // Helper functions

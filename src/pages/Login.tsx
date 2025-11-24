@@ -22,10 +22,12 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock authentication - in a real app, this would be an API call
-    // For demo purposes, we'll allow any email/password combination
-    setTimeout(() => {
-      // Set a mock admin token
+    // Get stored user from dataService
+    const storedUser = JSON.parse(localStorage.getItem("ps_current_user") || "{}");
+
+    // Check if credentials match
+    if (email === storedUser.email && password === storedUser.password) {
+      // Set the admin token to indicate successful login
       localStorage.setItem("adminToken", "mock-admin-token");
 
       toast({
@@ -35,7 +37,14 @@ export default function Login() {
 
       setIsLoading(false);
       navigate(from, { replace: true });
-    }, 1500);
+    } else {
+      setIsLoading(false);
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -11,8 +11,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // In a real app, you would check for an actual authentication token
-  // For this demo, we'll use a mock check
+  // Check if admin is authenticated
   const isAuthenticated = localStorage.getItem("adminToken") !== null;
 
   useEffect(() => {

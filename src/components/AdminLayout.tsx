@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
-  LayoutDashboard, 
-  Smartphone, 
-  Users, 
-  FileText, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Smartphone,
+  Users,
+  FileText,
+  Settings,
   LogOut,
   Menu,
   X,
   Download,
-  MessageSquare
+  MessageSquare,
+  User
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -25,40 +26,47 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { theme, setTheme } = useTheme();
 
   const sidebarItems = [
-    { 
-      icon: LayoutDashboard, 
-      label: "Dashboard", 
-      path: "/admin" 
+    {
+      icon: LayoutDashboard,
+      label: "Dashboard",
+      path: "/admin"
     },
-    { 
-      icon: Smartphone, 
-      label: "Devices", 
-      path: "/admin/devices" 
+    {
+      icon: User,
+      label: "Profile",
+      path: "/admin/profile"
     },
-    { 
-      icon: Download, 
-      label: "ROMs", 
-      path: "/admin/roms" 
+    {
+      icon: Smartphone,
+      label: "Devices",
+      path: "/admin/devices"
     },
-    { 
-      icon: Users, 
-      label: "Team Applications", 
-      path: "/admin/applications" 
+    {
+      icon: Download,
+      label: "ROMs",
+      path: "/admin/roms"
     },
-    { 
-      icon: FileText, 
-      label: "Changelogs", 
-      path: "/admin/changelogs" 
+    {
+      icon: Users,
+      label: "Team Applications",
+      path: "/admin/applications"
     },
-    { 
-      icon: Settings, 
-      label: "Settings", 
-      path: "/admin/settings" 
+    {
+      icon: FileText,
+      label: "Changelogs",
+      path: "/admin/changelogs"
+    },
+    {
+      icon: Settings,
+      label: "Settings",
+      path: "/admin/settings"
     },
   ];
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
+    // Don't remove the user data as it's needed for the application
+    // Only clear the authentication token
     navigate("/");
   };
 

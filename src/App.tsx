@@ -25,6 +25,7 @@ import AdminRoms from "./pages/admin/Roms";
 import AdminApplications from "./pages/admin/Applications";
 import AdminChangelogs from "./pages/admin/Changelogs";
 import AdminSettings from "./pages/admin/Settings";
+import AdminUserProfile from "./pages/admin/UserProfile";
 import "./i18n";
 
 const queryClient = new QueryClient();
@@ -99,6 +100,13 @@ const App = () => {
                     <ProtectedRoute>
                       <AdminLayout>
                         <AdminSettings />
+                      </AdminLayout>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/profile" element={
+                    <ProtectedRoute>
+                      <AdminLayout>
+                        <AdminUserProfile />
                       </AdminLayout>
                     </ProtectedRoute>
                   } />
