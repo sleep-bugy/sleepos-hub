@@ -76,7 +76,11 @@ export const deleteDevice = async (id: number): Promise<boolean> => {
 // ROM functions within devices
 export const getRoms = async (): Promise<Rom[]> => {
   try {
-    return await apiCall<Rom[]>('/api/roms');
+    // Get all devices and flatten their ROMs
+    const devices = await getDevices();
+    return devices.flatMap(device =>
+      Array.isArray(device.roms) ? device.roms.map(rom => ({...rom, deviceId: device.id})) : []
+    );
   } catch (error) {
     console.error('Error fetching roms:', error);
     return [];
@@ -85,7 +89,11 @@ export const getRoms = async (): Promise<Rom[]> => {
 
 export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> => {
   try {
-    return await apiCall<Rom[]>(`/api/devices/${deviceCodename}/roms`);
+    // Fetch all devices and filter for the specific codename
+    // Since Vercel doesn't allow multiple files with different parameter patterns,
+    // we handle device-specific roms in the [id].ts file
+    const allRoms = await getRoms();
+    return allRoms.filter(rom => rom.deviceCodename === deviceCodename);
   } catch (error) {
     console.error('Error fetching roms for device:', error);
     return [];
@@ -94,6 +102,7 @@ export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> =
 
 export const addRomToDevice = async (deviceCodename: string, rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename'>): Promise<Rom | null> => {
   try {
+    // This will use the device codename to route to the appropriate handler
     return await apiCall<Rom>(`/api/devices/${deviceCodename}/roms`, {
       method: 'POST',
       body: JSON.stringify(rom),

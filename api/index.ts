@@ -272,52 +272,6 @@ export default async function handler(request: Request) {
     }
   }
 
-  // Handle device ROM endpoints
-  if (path.includes('/api/devices/') && path.includes('/roms')) {
-    // Extract device codename from path: /api/devices/:codename/roms
-    const regex = /\/api\/devices\/([^\/]+)\/roms/;
-    const match = path.match(regex);
-    
-    if (match) {
-      const deviceCodename = match[1];
-      const device = mockData.devices.find((d: any) => d.codename === deviceCodename);
-      
-      if (device) {
-        if (method === 'GET') {
-          // Return ROMs for specific device
-          return new Response(JSON.stringify(device.roms || []), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        } else if (method === 'POST') {
-          // Add ROM to specific device
-          const newRomData = await request.json();
-          
-          if (!Array.isArray(device.roms)) {
-            device.roms = [];
-          }
-          
-          const allRoms = mockData.devices.flatMap((d: any) => d.roms || []);
-          const newId = Math.max(0, ...allRoms.map((r: any) => r.id || 0)) + 1;
-          
-          const newRom = {
-            ...newRomData,
-            id: newId,
-            deviceCodename,
-            downloads: 0,
-          };
-          
-          device.roms.push(newRom);
-          device.lastUpdate = new Date().toISOString().split('T')[0];
-          
-          return new Response(JSON.stringify(newRom), {
-            status: 201,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-      }
-    }
-  }
 
   return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
     status: 404,
