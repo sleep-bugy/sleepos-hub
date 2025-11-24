@@ -40,8 +40,8 @@ export default async function handler(request: Request) {
         break;
 
       case 'applications':
+        // Handle /api/applications
         if (pathSegments.length === 1) {
-          // Handle /api/applications
           if (method === 'GET') {
             // For now, returning empty array - this would connect to database in production
             return new Response(JSON.stringify([]), {
@@ -56,24 +56,25 @@ export default async function handler(request: Request) {
               status: 201,
               headers: { 'Content-Type': 'application/json' }
             });
-          } else if (pathSegments.length === 2) {
-            // Handle /api/applications/:id
-            if (method === 'PUT') {
-              // Update application
-              const updatedApp = await request.json();
-              // In production, this would connect to a database
-              return new Response(JSON.stringify(updatedApp), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-              });
-            }
+          }
+        } else if (pathSegments.length === 2) {
+          // Handle /api/applications/:id
+          // Extract application ID from pathSegments[1]
+          if (method === 'PUT') {
+            // Update application
+            const updatedApp = await request.json();
+            // In production, this would connect to a database
+            return new Response(JSON.stringify(updatedApp), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
           }
         }
         break;
 
       case 'changelogs':
+        // Handle /api/changelogs
         if (pathSegments.length === 1) {
-          // Handle /api/changelogs
           if (method === 'GET') {
             // For now, returning empty array - this would connect to database in production
             return new Response(JSON.stringify([]), {
@@ -88,27 +89,27 @@ export default async function handler(request: Request) {
               status: 201,
               headers: { 'Content-Type': 'application/json' }
             });
-          } else if (pathSegments.length === 2) {
-            // Handle /api/changelogs/:id
-            if (method === 'PUT') {
-              // Update changelog
-              const updatedChangelog = await request.json();
-              // In production, this would connect to a database
-              return new Response(JSON.stringify(updatedChangelog), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-              });
-            } else if (method === 'DELETE') {
-              // Delete changelog
-              return new Response(null, { status: 204 });
-            }
+          }
+        } else if (pathSegments.length === 2) {
+          // Handle /api/changelogs/:id
+          if (method === 'PUT') {
+            // Update changelog
+            const updatedChangelog = await request.json();
+            // In production, this would connect to a database
+            return new Response(JSON.stringify(updatedChangelog), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          } else if (method === 'DELETE') {
+            // Delete changelog
+            return new Response(null, { status: 204 });
           }
         }
         break;
 
       case 'settings':
+        // Handle /api/settings
         if (pathSegments.length === 1) {
-          // Handle /api/settings
           if (method === 'GET') {
             // Return default settings
             return new Response(JSON.stringify({
@@ -137,8 +138,8 @@ export default async function handler(request: Request) {
         break;
 
       case 'user':
+        // Handle /api/user (get current user)
         if (pathSegments.length === 1) {
-          // Handle /api/user (get current user)
           if (method === 'GET') {
             // Return default user
             return new Response(JSON.stringify({
@@ -167,5 +168,13 @@ export default async function handler(request: Request) {
   return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
     status: 404,
     headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+  }
+
+  return new Response(JSON.stringify({ error: "Endpoint not found" }), {
+    status: 404,
+    headers: { "Content-Type": "application/json" }
   });
 }

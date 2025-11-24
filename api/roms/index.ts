@@ -61,4 +61,4 @@ export default async function handler(request: Request) {
   }
 
   return new Response(null, { status: 405 });
-}  return new Response(null, { status: 405 });}
+}
