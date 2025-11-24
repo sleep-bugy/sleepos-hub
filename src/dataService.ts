@@ -94,10 +94,11 @@ export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> =
 
 export const addRomToDevice = async (deviceCodename: string, rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename'>): Promise<Rom | null> => {
   try {
-    return await apiCall<Rom>(`/api/devices/${deviceCodename}/roms`, {
+    const result = await apiCall<Rom>(`/api/devices/${deviceCodename}/roms`, {
       method: 'POST',
       body: JSON.stringify(rom),
     });
+    return result;
   } catch (error) {
     console.error('Error adding rom to device:', error);
     return null;
@@ -106,16 +107,21 @@ export const addRomToDevice = async (deviceCodename: string, rom: Omit<Rom, 'id'
 
 export const updateRomForDevice = async (deviceCodename: string, rom: Rom): Promise<Rom | null> => {
   // The API doesn't support updating individual ROMs directly
-  // This would need to be implemented in the API
-  console.error('updateRomForDevice not implemented in API');
+  // This would need to be implemented via a different mechanism
+  console.error('updateRomForDevice not implemented in current API');
   return null;
 };
 
 export const deleteRomFromDevice = async (deviceCodename: string, romId: number): Promise<boolean> => {
-  // The API doesn't support deleting individual ROMs directly
-  // This would need to be implemented in the API
-  console.error('deleteRomFromDevice not implemented in API');
-  return false;
+  try {
+    // In this implementation, deleting individual ROMs isn't directly supported
+    // The implementation would depend on the specific API implementation
+    console.warn('Deleting individual ROMs requires specific endpoint implementation');
+    return false;
+  } catch (error) {
+    console.error('Error deleting rom from device:', error);
+    return false;
+  }
 };
 
 // Maintaining backward compatibility for admin panel
