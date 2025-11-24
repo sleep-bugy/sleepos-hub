@@ -265,7 +265,7 @@ export default function AdminDevices() {
                     <TableCell>{device.codename}</TableCell>
                     <TableCell className="flex items-center gap-1">
                       <Download className="h-4 w-4 text-muted-foreground" />
-                      {device.roms}
+                      {Array.isArray(device.roms) ? device.roms.length : 0}
                     </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${

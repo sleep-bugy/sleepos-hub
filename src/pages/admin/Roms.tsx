@@ -40,6 +40,7 @@ export default function AdminRoms() {
     romType: "SleepOS" as "SleepOS" | "AOSP" | "Port",
     version: "",
     size: "",
+    maintainer: "",
     downloadUrl: "",
     changelog: "",
     notes: "",
@@ -75,6 +76,7 @@ export default function AdminRoms() {
       const newRom = addRom({
         device: device.name,
         deviceCodename: formData.deviceCodename,
+        maintainer: formData.maintainer,
         romType: formData.romType,
         version: formData.version,
         size: formData.size,
@@ -107,6 +109,7 @@ export default function AdminRoms() {
       const updatedRom = updateRom({
         ...editingRom,
         deviceCodename: formData.deviceCodename,
+        maintainer: formData.maintainer,
         romType: formData.romType,
         version: formData.version,
         size: formData.size,
@@ -161,6 +164,7 @@ export default function AdminRoms() {
       romType: rom.romType,
       version: rom.version,
       size: rom.size,
+      maintainer: rom.maintainer,
       downloadUrl: rom.downloadUrl || "",
       changelog: rom.changelog,
       notes: rom.notes || "",
@@ -175,6 +179,7 @@ export default function AdminRoms() {
       romType: "SleepOS",
       version: "",
       size: "",
+      maintainer: "",
       downloadUrl: "",
       changelog: "",
       notes: "",
@@ -265,23 +270,35 @@ export default function AdminRoms() {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="size" className="text-right">File Size</label>
-                    <Input 
-                      id="size" 
+                    <Input
+                      id="size"
                       name="size"
-                      className="col-span-3" 
-                      placeholder="e.g., 1.2 GB" 
+                      className="col-span-3"
+                      placeholder="e.g., 1.2 GB"
                       value={formData.size}
                       onChange={handleFormChange}
                       required
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="maintainer" className="text-right">Maintainer</label>
+                    <Input
+                      id="maintainer"
+                      name="maintainer"
+                      className="col-span-3"
+                      placeholder="e.g., John Doe"
+                      value={formData.maintainer}
+                      onChange={handleFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="downloadUrl" className="text-right">Download URL</label>
-                    <Input 
-                      id="downloadUrl" 
+                    <Input
+                      id="downloadUrl"
                       name="downloadUrl"
-                      className="col-span-3" 
-                      placeholder="https://..." 
+                      className="col-span-3"
+                      placeholder="https://..."
                       value={formData.downloadUrl}
                       onChange={handleFormChange}
                     />
@@ -298,12 +315,25 @@ export default function AdminRoms() {
                     />
                   </div>
                   <div className="grid grid-cols-4 items-start gap-4">
-                    <label htmlFor="notes" className="text-right pt-2">Notes</label>
-                    <Textarea 
-                      id="notes" 
+                    <label htmlFor="notes" className="text-right pt-2">Detailed Notes</label>
+                    <Textarea
+                      id="notes"
                       name="notes"
-                      className="col-span-3 h-20" 
-                      placeholder="Additional notes..."
+                      className="col-span-3 h-32"
+                      placeholder="# Installation Instructions
+- Flash using TWRP recovery
+- Wipe system, data, cache, and dalvik
+- Flash ROM zip
+- Reboot system
+
+# Additional Features
+- Customized theme support
+- Enhanced security patches
+- Optimized performance settings
+
+# Known Issues
+- Microphone may not work with VoIP
+- Minor battery drain during video playback"
                       value={formData.notes}
                       onChange={handleFormChange}
                     />
@@ -350,6 +380,7 @@ export default function AdminRoms() {
                 <TableRow>
                   <TableHead>Device</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Maintainer</TableHead>
                   <TableHead>Version</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Downloads</TableHead>
@@ -364,8 +395,8 @@ export default function AdminRoms() {
                     <TableCell className="font-medium">{rom.device}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        rom.romType === "SleepOS" 
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" 
+                        rom.romType === "SleepOS"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                           : rom.romType === "AOSP"
                           ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                           : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
@@ -373,6 +404,7 @@ export default function AdminRoms() {
                         {rom.romType}
                       </span>
                     </TableCell>
+                    <TableCell>{rom.maintainer}</TableCell>
                     <TableCell>{rom.version}</TableCell>
                     <TableCell>{rom.size}</TableCell>
                     <TableCell className="flex items-center gap-1">
@@ -381,8 +413,8 @@ export default function AdminRoms() {
                     </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        rom.status === "Active" 
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
+                        rom.status === "Active"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                           : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                       }`}>
                         {rom.status}
@@ -391,18 +423,40 @@ export default function AdminRoms() {
                     <TableCell>{rom.uploadDate}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
+                        {rom.notes && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>ROM Notes for {rom.version}</DialogTitle>
+                              </DialogHeader>
+                              <div className="py-4">
+                                <h3 className="font-semibold mb-2">Installation Instructions</h3>
+                                <pre className="whitespace-pre-wrap bg-muted p-4 rounded-lg text-sm font-mono max-h-60 overflow-y-auto">
+                                  {rom.notes}
+                                </pre>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                        {!rom.notes && (
+                          <Button variant="outline" size="sm" disabled>
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleEditClick(rom)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteRom(rom.id)}
                         >

@@ -20,6 +20,15 @@ const resources = {
           description: "Custom ROM flavors crafted for performance, stability, and elegance",
           cta: "Download Now"
         },
+        brands: {
+          title: "Device Brands",
+          xiaomi: "Xiaomi",
+          xiaomiDesc: "Discover custom ROMs for Xiaomi devices",
+          poco: "POCO",
+          pocoDesc: "Custom ROMs specially optimized for POCO devices",
+          redmi: "Redmi",
+          redmiDesc: "Enhanced ROMs for Redmi series devices"
+        },
         flavors: {
           title: "Choose Your Flavor",
           sleepos: "SleepOS",
@@ -81,6 +90,11 @@ const resources = {
       download: {
         title: "Download ROMs",
         search: "Search devices or ROMs...",
+        allBrands: "All Brands",
+        xiaomi: "Xiaomi",
+        poco: "POCO",
+        redmi: "Redmi",
+        noRomsForType: "No {{romType}} ROMs available for this device",
         filter: {
           all: "All",
           sleepos: "SleepOS",
@@ -99,7 +113,11 @@ const resources = {
         download: "Download",
         checksum: "Checksum",
         fileSize: "File Size",
-        uploadDate: "Upload Date"
+        uploadDate: "Upload Date",
+        type: "Type",
+        roms: {
+          available: "{{count}} ROMs available"
+        }
       },
       team: {
         title: "Our Team",
@@ -164,7 +182,23 @@ const resources = {
         loading: "Loading...",
         error: "Something went wrong",
         noResults: "No results found",
-        viewMore: "View More"
+        viewMore: "View More",
+        viewLess: "View Less"
+      },
+      deviceDownload: {
+        title: "Download ROMs for {{device}}",
+        description: "Select and download the ROM version that best fits your needs",
+        noRoms: "No ROMs available for {{device}} at this time",
+        deviceNotFound: "Device not found",
+        downloads: "{{count}} downloads",
+        changelog: "Changelog",
+        noNotes: "No additional notes",
+        download: "Download",
+        details: "Details",
+        backToDownload: "Back to Downloads",
+        version: "Version",
+        size: "Size",
+        date: "Date"
       }
     }
   },
@@ -184,6 +218,15 @@ const resources = {
           subtitle: "Rasakan Android seperti tidak pernah sebelumnya",
           description: "ROM kustom yang dibuat untuk performa, stabilitas, dan keanggunan",
           cta: "Unduh Sekarang"
+        },
+        brands: {
+          title: "Merek Perangkat",
+          xiaomi: "Xiaomi",
+          xiaomiDesc: "Temukan ROM kustom untuk perangkat Xiaomi",
+          poco: "POCO",
+          pocoDesc: "ROM kustom yang dioptimalkan khusus untuk perangkat POCO",
+          redmi: "Redmi",
+          redmiDesc: "ROM yang ditingkatkan untuk perangkat seri Redmi"
         },
         flavors: {
           title: "Pilih Versi Anda",
@@ -246,6 +289,11 @@ const resources = {
       download: {
         title: "Unduh ROM",
         search: "Cari perangkat atau ROM...",
+        allBrands: "Semua Merek",
+        xiaomi: "Xiaomi",
+        poco: "POCO",
+        redmi: "Redmi",
+        noRomsForType: "Tidak ada ROM {{romType}} tersedia untuk perangkat ini",
         filter: {
           all: "Semua",
           sleepos: "SleepOS",
@@ -264,7 +312,11 @@ const resources = {
         download: "Unduh",
         checksum: "Checksum",
         fileSize: "Ukuran File",
-        uploadDate: "Tanggal Unggah"
+        uploadDate: "Tanggal Unggah",
+        type: "Jenis",
+        roms: {
+          available: "{{count}} ROM Tersedia"
+        }
       },
       team: {
         title: "Tim Kami",
@@ -329,7 +381,23 @@ const resources = {
         loading: "Memuat...",
         error: "Terjadi kesalahan",
         noResults: "Tidak ada hasil ditemukan",
-        viewMore: "Lihat Lebih Banyak"
+        viewMore: "Lihat Lebih Banyak",
+        viewLess: "Lihat Lebih Sedikit"
+      },
+      deviceDownload: {
+        title: "Unduh ROM untuk {{device}}",
+        description: "Pilih dan unduh versi ROM yang paling sesuai dengan kebutuhan Anda",
+        noRoms: "Tidak ada ROM yang tersedia untuk {{device}} saat ini",
+        deviceNotFound: "Perangkat tidak ditemukan",
+        downloads: "{{count}} unduhan",
+        changelog: "Catatan Perubahan",
+        noNotes: "Tidak ada catatan tambahan",
+        download: "Unduh",
+        details: "Detail",
+        backToDownload: "Kembali ke Unduhan",
+        version: "Versi",
+        size: "Ukuran",
+        date: "Tanggal"
       }
     }
   },
@@ -429,7 +497,11 @@ const resources = {
         download: "डाउनलोड",
         checksum: "चेकसम",
         fileSize: "फ़ाइल का आकार",
-        uploadDate: "अपलोड की तारीख"
+        uploadDate: "अपलोड की तारीख",
+        type: "प्रकार",
+        roms: {
+          available: "{{count}} ROMs उपलब्ध"
+        }
       },
       team: {
         title: "हमारी टीम",
@@ -494,7 +566,8 @@ const resources = {
         loading: "लोड हो रहा है...",
         error: "कुछ गलत हो गया",
         noResults: "कोई परिणाम नहीं मिला",
-        viewMore: "और देखें"
+        viewMore: "और देखें",
+        viewLess: "कम देखें"
       }
     }
   },
@@ -594,7 +667,11 @@ const resources = {
         download: "Скачать",
         checksum: "Контрольная сумма",
         fileSize: "Размер файла",
-        uploadDate: "Дата загрузки"
+        uploadDate: "Дата загрузки",
+        type: "Тип",
+        roms: {
+          available: "{{count}} ROM Доступно"
+        }
       },
       team: {
         title: "Наша команда",
@@ -659,7 +736,8 @@ const resources = {
         loading: "Загрузка...",
         error: "Что-то пошло не так",
         noResults: "Результатов не найдено",
-        viewMore: "Посмотреть больше"
+        viewMore: "Посмотреть больше",
+        viewLess: "Показать меньше"
       }
     }
   },
@@ -759,7 +837,11 @@ const resources = {
         download: "ดาวน์โหลด",
         checksum: "Checksum",
         fileSize: "ขนาดไฟล์",
-        uploadDate: "วันที่อัปโหลด"
+        uploadDate: "วันที่อัปโหลด",
+        type: "ประเภท",
+        roms: {
+          available: "{{count}} ROMs ที่มีอยู่"
+        }
       },
       team: {
         title: "ทีมของเรา",
@@ -824,7 +906,8 @@ const resources = {
         loading: "กำลังโหลด...",
         error: "เกิดข้อผิดพลาดบางอย่าง",
         noResults: "ไม่พบผลลัพธ์",
-        viewMore: "ดูเพิ่มเติม"
+        viewMore: "ดูเพิ่มเติม",
+        viewLess: "ดูน้อยลง"
       }
     }
   },
@@ -924,7 +1007,11 @@ const resources = {
         download: "Tải về",
         checksum: "Checksum",
         fileSize: "Kích thước tập tin",
-        uploadDate: "Ngày tải lên"
+        uploadDate: "Ngày tải lên",
+        type: "Loại",
+        roms: {
+          available: "{{count}} ROM khả dụng"
+        }
       },
       team: {
         title: "Đội ngũ chúng tôi",
@@ -989,7 +1076,8 @@ const resources = {
         loading: "Đang tải...",
         error: "Đã xảy ra lỗi",
         noResults: "Không tìm thấy kết quả",
-        viewMore: "Xem thêm"
+        viewMore: "Xem thêm",
+        viewLess: "Xem ít hơn"
       }
     }
   },
@@ -1089,7 +1177,11 @@ const resources = {
         download: "تحميل",
         checksum: "Checksum",
         fileSize: "حجم الملف",
-        uploadDate: "تاريخ الرفع"
+        uploadDate: "تاريخ الرفع",
+        type: "النوع",
+        roms: {
+          available: "{{count}} أنظمة متوفرة"
+        }
       },
       team: {
         title: "فريقنا",
@@ -1154,7 +1246,8 @@ const resources = {
         loading: "جاري التحميل...",
         error: "حدث خطأ ما",
         noResults: "لا توجد نتائج",
-        viewMore: "عرض المزيد"
+        viewMore: "عرض المزيد",
+        viewLess: "عرض أقل"
       }
     }
   },
@@ -1254,7 +1347,11 @@ const resources = {
         download: "ჩამოტვირთვა",
         checksum: "Checksum",
         fileSize: "ფაილის ზომა",
-        uploadDate: "ატვირთვის თარიღი"
+        uploadDate: "ატვირთვის თარიღი",
+        type: "ტიპი",
+        roms: {
+          available: "{{count}} ROM სისტემა ხელმისაწვდომია"
+        }
       },
       team: {
         title: "ჩვენი გუნდი",
@@ -1319,7 +1416,8 @@ const resources = {
         loading: "იტვირთება...",
         error: "რაღაც შეცდომა მოხდა",
         noResults: "შედეგები ვერ მოიძებნა",
-        viewMore: "მეტის ნახვა"
+        viewMore: "მეტის ნახვა",
+        viewLess: "ნაკლების ნახვა"
       }
     }
   },
@@ -1419,7 +1517,11 @@ const resources = {
         download: "ডাউনলোড",
         checksum: "চেকসাম",
         fileSize: "ফাইলের আকার",
-        uploadDate: "আপলোডের তারিখ"
+        uploadDate: "আপলোডের তারিখ",
+        type: "ধরন",
+        roms: {
+          available: "{{count}} রম সহায়যগ্য"
+        }
       },
       team: {
         title: "আমাদের দল",
@@ -1484,7 +1586,8 @@ const resources = {
         loading: "লোড হচ্ছে...",
         error: "কিছু ভুল হয়েছে",
         noResults: "কোনো ফলাফল পাওয়া যায়নি",
-        viewMore: "আরও দেখুন"
+        viewMore: "আরও দেখুন",
+        viewLess: "কম দেখুন"
       }
     }
   }

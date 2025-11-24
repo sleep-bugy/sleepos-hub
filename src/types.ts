@@ -1,17 +1,9 @@
 // types.ts
-export interface Device {
-  id: number;
-  name: string;
-  codename: string;
-  roms: number;
-  status: 'Active' | 'Inactive';
-  lastUpdate: string;
-}
-
 export interface Rom {
   id: number;
-  device: string;
+  device?: string;  // Keep for backward compatibility
   deviceCodename: string;
+  maintainer: string;  // Moved from Device to Rom
   romType: 'SleepOS' | 'AOSP' | 'Port';
   version: string;
   size: string;
@@ -21,6 +13,15 @@ export interface Rom {
   downloadUrl: string;
   changelog: string;
   notes?: string;
+}
+
+export interface Device {
+  id: number;
+  name: string;
+  codename: string;
+  status: 'Active' | 'Inactive';
+  lastUpdate: string;
+  roms: Rom[]; // Array of ROMs for this device, each with its own maintainer
 }
 
 export interface Application {

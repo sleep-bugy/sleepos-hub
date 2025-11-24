@@ -1,31 +1,50 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Smartphone, Zap, Shield } from "lucide-react";
+import { ArrowRight, Smartphone, SmartphoneIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export default function Home() {
   const { t } = useTranslation();
 
-  const flavors = [
+  // Devices organized by brand
+  const brands = [
     {
-      title: t("home.flavors.sleepos"),
-      description: t("home.flavors.sleeposDesc"),
-      icon: Zap,
-      color: "from-blue-500 to-cyan-500",
+      name: t("home.brands.xiaomi"),
+      title: "Xiaomi Devices",
+      description: t("home.brands.xiaomiDesc"),
+      icon: Smartphone,
+      color: "from-red-500 to-pink-500",
+      devices: [
+        { name: "Xiaomi Mi 11", codename: "venus" },
+        { name: "Xiaomi Redmi Note 10", codename: "sweet" },
+        { name: "Xiaomi POCO X3", codename: "surya" },
+      ],
     },
     {
-      title: t("home.flavors.aosp"),
-      description: t("home.flavors.aospDesc"),
+      name: t("home.brands.poco"),
+      title: "POCO Devices",
+      description: t("home.brands.pocoDesc"),
+      icon: Smartphone,
+      color: "from-blue-500 to-cyan-500",
+      devices: [
+        { name: "POCO F3", codename: "alioth" },
+        { name: "POCO X3 Pro", codename: "vayu" },
+        { name: "POCO M3", codename: "citrus" },
+      ],
+    },
+    {
+      name: t("home.brands.redmi"),
+      title: "Redmi Devices",
+      description: t("home.brands.redmiDesc"),
       icon: Smartphone,
       color: "from-green-500 to-emerald-500",
-    },
-    {
-      title: t("home.flavors.port"),
-      description: t("home.flavors.portDesc"),
-      icon: Shield,
-      color: "from-purple-500 to-pink-500",
+      devices: [
+        { name: "Redmi Note 11", codename: "rosemary" },
+        { name: "Redmi K40", codename: "alioth" },
+        { name: "Redmi 10", codename: "fog" },
+      ],
     },
   ];
 
@@ -60,7 +79,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Flavors Section */}
+      {/* Brands Section - Display as vertical rectangular cards */}
       <section className="py-20 bg-card/30">
         <div className="container mx-auto px-4">
           <motion.div
@@ -70,27 +89,34 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-              {t("home.flavors.title")}
+              {t("home.brands.title")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {flavors.map((flavor, index) => (
+              {brands.map((brand, index) => (
                 <motion.div
-                  key={flavor.title}
+                  key={brand.name}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <Card className="card-hover h-full">
-                    <CardHeader>
-                      <div className={`h-12 w-12 rounded-lg bg-gradient-to-br ${flavor.color} flex items-center justify-center mb-4`}>
-                        <flavor.icon className="h-6 w-6 text-white" />
+                  <Card className="card-hover h-full flex flex-col">
+                    <CardHeader className="pb-3">
+                      <div className={`h-12 w-12 rounded-lg bg-gradient-to-br ${brand.color} flex items-center justify-center mb-4`}>
+                        <brand.icon className="h-6 w-6 text-white" />
                       </div>
-                      <CardTitle>{flavor.title}</CardTitle>
-                      <CardDescription>{flavor.description}</CardDescription>
+                      <CardTitle className="text-xl">{brand.title}</CardTitle>
+                      <CardDescription>{brand.description}</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <Link to="/download">
+                    <CardContent className="flex-1 flex flex-col">
+                      <div className="space-y-2 mb-4 flex-1">
+                        {brand.devices.map((device, idx) => (
+                          <div key={idx} className="text-sm p-2 bg-muted rounded">
+                            {device.name} ({device.codename})
+                          </div>
+                        ))}
+                      </div>
+                      <Link to={`/download?brand=${brand.name.toLowerCase()}`}>
                         <Button variant="outline" className="w-full">
                           {t("common.viewMore")}
                         </Button>

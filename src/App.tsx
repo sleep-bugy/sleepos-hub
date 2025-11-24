@@ -13,10 +13,12 @@ import StartupLoader from "@/components/StartupLoader";
 import Home from "./pages/Home";
 import Features from "./pages/Features";
 import Download from "./pages/Download";
+import DownloadTest from "./pages/DownloadTest";
 import Team from "./pages/Team";
 import About from "./pages/About";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import DeviceDownload from "./pages/download/DeviceDownload";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminDevices from "./pages/admin/Devices";
 import AdminRoms from "./pages/admin/Roms";
@@ -55,6 +57,7 @@ const App = () => {
                   <Route path="/team" element={<Team />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/download/:deviceCodename" element={<DeviceDownload />} />
 
                   {/* Admin Routes */}
                   <Route path="/admin" element={

@@ -98,7 +98,7 @@ export default function About() {
           transition={{ duration: 0.6 }}
           className="bg-card/50 rounded-2xl p-8 md:p-12 text-center"
         >
-          <h2 className="text-3xl font-bold mb-4">{t("about.community")}</h2>
+          <h2 className="text-3xl font-bold mb-4">{t("about.community.title")}</h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             {t("about.community.description")}
           </p>
