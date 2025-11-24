@@ -168,11 +168,4 @@ export default async function handler(request: Request) {
     status: 404,
     headers: { 'Content-Type': 'application/json' }
   });
-}    }
-  }
-
-  return new Response(JSON.stringify({ error: "Endpoint not found" }), {
-    status: 404,
-    headers: { "Content-Type": "application/json" }
-  });
 }
