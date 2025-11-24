@@ -51,7 +51,7 @@ export default function Team() {
     cv: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
@@ -64,7 +64,7 @@ export default function Team() {
         cv: formData.cv || undefined,
       };
 
-      addApplication(newApplication);
+      await addApplication(newApplication);
 
       toast({
         title: t("team.apply.success"),

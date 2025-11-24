@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
+import { getCurrentUser } from "@/dataService";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -18,15 +19,15 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     // Get stored user from dataService
-    const storedUser = JSON.parse(localStorage.getItem("ps_current_user") || "{}");
+    const storedUser = await getCurrentUser();
 
     // Check if credentials match
-    if (email === storedUser.email && password === storedUser.password) {
+    if (storedUser && email === storedUser.email && password === storedUser.password) {
       // Set the admin token to indicate successful login
       localStorage.setItem("adminToken", "mock-admin-token");
 

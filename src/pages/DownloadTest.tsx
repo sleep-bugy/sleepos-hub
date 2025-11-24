@@ -38,39 +38,43 @@ export default function DownloadTest() {
   }, [searchParams]);
 
   useEffect(() => {
-    try {
-      let allDevices = getActiveDevices();
-      console.log('All devices from getActiveDevices:', allDevices); // Debug log
+    const fetchDevices = async () => {
+      try {
+        let allDevices = await getActiveDevices();
+        console.log('All devices from getActiveDevices:', allDevices); // Debug log
 
-      // Filter by brand if selected
-      if (selectedBrand) {
-        if (selectedBrand === 'xiaomi') {
-          allDevices = allDevices.filter(device =>
-            device.name.toLowerCase().includes('xiaomi') ||
-            device.name.toLowerCase().includes('redmi') ||
-            device.name.toLowerCase().includes('poco')
-          );
-        } else if (selectedBrand === 'poco') {
-          allDevices = allDevices.filter(device => device.name.toLowerCase().includes('poco'));
-        } else if (selectedBrand === 'redmi') {
-          allDevices = allDevices.filter(device => device.name.toLowerCase().includes('redmi'));
+        // Filter by brand if selected
+        if (selectedBrand) {
+          if (selectedBrand === 'xiaomi') {
+            allDevices = allDevices.filter(device =>
+              device.name.toLowerCase().includes('xiaomi') ||
+              device.name.toLowerCase().includes('redmi') ||
+              device.name.toLowerCase().includes('poco')
+            );
+          } else if (selectedBrand === 'poco') {
+            allDevices = allDevices.filter(device => device.name.toLowerCase().includes('poco'));
+          } else if (selectedBrand === 'redmi') {
+            allDevices = allDevices.filter(device => device.name.toLowerCase().includes('redmi'));
+          }
         }
-      }
 
-      // Filter by ROM type if not 'ALL'
-      if (selectedRomType !== 'ALL') {
-        allDevices = allDevices.filter(device =>
-          device.roms && device.roms.some(rom => rom.romType === selectedRomType && rom.status === 'Active')
-        );
-      }
+        // Filter by ROM type if not 'ALL'
+        if (selectedRomType !== 'ALL') {
+          allDevices = allDevices.filter(device =>
+            device.roms && device.roms.some(rom => rom.romType === selectedRomType && rom.status === 'Active')
+          );
+        }
 
-      setDevices(allDevices);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error in main useEffect:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setLoading(false);
-    }
+        setDevices(allDevices);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error in main useEffect:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        setLoading(false);
+      }
+    };
+
+    fetchDevices();
   }, [selectedBrand, selectedRomType]);
 
   if (loading) {

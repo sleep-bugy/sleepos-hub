@@ -31,31 +31,35 @@ export default function Download() {
   }, [searchParams]);
 
   useEffect(() => {
-    let allDevices = getActiveDevices();
+    const fetchDevices = async () => {
+      let allDevices = await getActiveDevices();
 
-    // Filter by brand if selected
-    if (selectedBrand) {
-      if (selectedBrand === 'xiaomi') {
-        allDevices = allDevices.filter(device =>
-          device.name.toLowerCase().includes('xiaomi') ||
-          device.name.toLowerCase().includes('redmi') ||
-          device.name.toLowerCase().includes('poco')
-        );
-      } else if (selectedBrand === 'poco') {
-        allDevices = allDevices.filter(device => device.name.toLowerCase().includes('poco'));
-      } else if (selectedBrand === 'redmi') {
-        allDevices = allDevices.filter(device => device.name.toLowerCase().includes('redmi'));
+      // Filter by brand if selected
+      if (selectedBrand) {
+        if (selectedBrand === 'xiaomi') {
+          allDevices = allDevices.filter(device =>
+            device.name.toLowerCase().includes('xiaomi') ||
+            device.name.toLowerCase().includes('redmi') ||
+            device.name.toLowerCase().includes('poco')
+          );
+        } else if (selectedBrand === 'poco') {
+          allDevices = allDevices.filter(device => device.name.toLowerCase().includes('poco'));
+        } else if (selectedBrand === 'redmi') {
+          allDevices = allDevices.filter(device => device.name.toLowerCase().includes('redmi'));
+        }
       }
-    }
 
-    // Filter by ROM type if not 'ALL'
-    if (selectedRomType !== 'ALL') {
-      allDevices = allDevices.filter(device =>
-        device.roms && Array.isArray(device.roms) && device.roms.some(rom => rom.romType === selectedRomType && rom.status === 'Active')
-      );
-    }
+      // Filter by ROM type if not 'ALL'
+      if (selectedRomType !== 'ALL') {
+        allDevices = allDevices.filter(device =>
+          device.roms && Array.isArray(device.roms) && device.roms.some(rom => rom.romType === selectedRomType && rom.status === 'Active')
+        );
+      }
 
-    setDevices(allDevices);
+      setDevices(allDevices);
+    };
+
+    fetchDevices();
   }, [selectedBrand, selectedRomType]);
 
   const filteredDevices = devices.filter(device => {

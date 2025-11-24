@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +16,19 @@ export default function UserProfile() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Get current user from dataService
-  const currentUser = getCurrentUserData();
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await getCurrentUserData();
+      setCurrentUser(user);
+    };
 
-  const handleSubmit = (e: React.FormEvent) => {
+    fetchUser();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
@@ -86,7 +94,7 @@ export default function UserProfile() {
         password: newPassword || currentUser.password,
       };
 
-      updateUser(updatedUser);
+      await updateUser(updatedUser);
 
       toast({
         title: "Success",

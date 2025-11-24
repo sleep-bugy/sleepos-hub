@@ -39,7 +39,12 @@ export default function AdminDevices() {
   });
 
   useEffect(() => {
-    setDevices(getDevices());
+    const fetchDevices = async () => {
+      const devices = await getDevices();
+      setDevices(devices);
+    };
+
+    fetchDevices();
   }, []);
 
   const filteredDevices = devices.filter(device => 
@@ -55,9 +60,9 @@ export default function AdminDevices() {
     }));
   };
 
-  const handleAddDevice = () => {
+  const handleAddDevice = async () => {
     try {
-      const newDevice = addDevice({
+      const newDevice = await addDevice({
         name: formData.name,
         codename: formData.codename,
         status: formData.status as "Active" | "Inactive",
@@ -78,17 +83,17 @@ export default function AdminDevices() {
     }
   };
 
-  const handleUpdateDevice = () => {
+  const handleUpdateDevice = async () => {
     if (!editingDevice) return;
-    
+
     try {
-      const updatedDevice = updateDevice({
+      const updatedDevice = await updateDevice({
         ...editingDevice,
         name: formData.name,
         codename: formData.codename,
         status: formData.status as "Active" | "Inactive",
       });
-      
+
       setDevices(devices.map(d => d.id === updatedDevice.id ? updatedDevice : d));
       toast({
         title: "Success",
@@ -106,9 +111,9 @@ export default function AdminDevices() {
     }
   };
 
-  const handleDeleteDevice = (id: number) => {
+  const handleDeleteDevice = async (id: number) => {
     try {
-      const success = deleteDevice(id);
+      const success = await deleteDevice(id);
       if (success) {
         setDevices(devices.filter(device => device.id !== id));
         toast({

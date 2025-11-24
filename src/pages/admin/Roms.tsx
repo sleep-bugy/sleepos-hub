@@ -48,8 +48,13 @@ export default function AdminRoms() {
   });
 
   useEffect(() => {
-    setRoms(getRoms());
-    setDevices(getDevices());
+    const fetchData = async () => {
+      const [roms, devices] = await Promise.all([getRoms(), getDevices()]);
+      setRoms(roms);
+      setDevices(devices);
+    };
+
+    fetchData();
   }, []);
 
   const filteredRoms = roms.filter(rom => 
@@ -66,14 +71,14 @@ export default function AdminRoms() {
     }));
   };
 
-  const handleAddRom = () => {
+  const handleAddRom = async () => {
     try {
       const device = devices.find(d => d.codename === formData.deviceCodename);
       if (!device) {
         throw new Error("Invalid device selected");
       }
-      
-      const newRom = addRom({
+
+      const newRom = await addRom({
         device: device.name,
         deviceCodename: formData.deviceCodename,
         maintainer: formData.maintainer,
@@ -85,7 +90,7 @@ export default function AdminRoms() {
         notes: formData.notes,
         status: formData.status,
       });
-      
+
       setRoms([...roms, newRom]);
       toast({
         title: "Success",
@@ -102,11 +107,11 @@ export default function AdminRoms() {
     }
   };
 
-  const handleUpdateRom = () => {
+  const handleUpdateRom = async () => {
     if (!editingRom) return;
-    
+
     try {
-      const updatedRom = updateRom({
+      const updatedRom = await updateRom({
         ...editingRom,
         deviceCodename: formData.deviceCodename,
         maintainer: formData.maintainer,
@@ -118,7 +123,7 @@ export default function AdminRoms() {
         notes: formData.notes,
         status: formData.status,
       });
-      
+
       setRoms(roms.map(r => r.id === updatedRom.id ? updatedRom : r));
       toast({
         title: "Success",
@@ -136,9 +141,9 @@ export default function AdminRoms() {
     }
   };
 
-  const handleDeleteRom = (id: number) => {
+  const handleDeleteRom = async (id: number) => {
     try {
-      const success = deleteRom(id);
+      const success = await deleteRom(id);
       if (success) {
         setRoms(roms.filter(rom => rom.id !== id));
         toast({

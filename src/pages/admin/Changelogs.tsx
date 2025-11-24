@@ -44,8 +44,13 @@ export default function AdminChangelogs() {
   });
 
   useEffect(() => {
-    setChangelogs(getChangelogs());
-    setDevices(getDevices());
+    const fetchData = async () => {
+      const [changelogs, devices] = await Promise.all([getChangelogs(), getDevices()]);
+      setChangelogs(changelogs);
+      setDevices(devices);
+    };
+
+    fetchData();
   }, []);
 
   const filteredChangelogs = changelogs.filter(changelog => 
@@ -62,14 +67,14 @@ export default function AdminChangelogs() {
     }));
   };
 
-  const handleAddChangelog = () => {
+  const handleAddChangelog = async () => {
     try {
       const device = devices.find(d => d.codename === formData.device);
       if (!device) {
         throw new Error("Invalid device selected");
       }
-      
-      const newChangelog = addChangelog({
+
+      const newChangelog = await addChangelog({
         device: device.name,
         romType: formData.romType,
         version: formData.version,
@@ -77,7 +82,7 @@ export default function AdminChangelogs() {
         changelog: formData.changelog,
         status: formData.status,
       });
-      
+
       setChangelogs([...changelogs, newChangelog]);
       toast({
         title: "Success",
@@ -94,11 +99,11 @@ export default function AdminChangelogs() {
     }
   };
 
-  const handleUpdateChangelog = () => {
+  const handleUpdateChangelog = async () => {
     if (!editingChangelog) return;
-    
+
     try {
-      const updatedChangelog = updateChangelog({
+      const updatedChangelog = await updateChangelog({
         ...editingChangelog,
         device: formData.device,
         romType: formData.romType,
@@ -107,7 +112,7 @@ export default function AdminChangelogs() {
         changelog: formData.changelog,
         status: formData.status,
       });
-      
+
       setChangelogs(changelogs.map(c => c.id === updatedChangelog.id ? updatedChangelog : c));
       toast({
         title: "Success",
@@ -125,9 +130,9 @@ export default function AdminChangelogs() {
     }
   };
 
-  const handleDeleteChangelog = (id: number) => {
+  const handleDeleteChangelog = async (id: number) => {
     try {
-      const success = deleteChangelog(id);
+      const success = await deleteChangelog(id);
       if (success) {
         setChangelogs(changelogs.filter(changelog => changelog.id !== id));
         toast({

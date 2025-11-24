@@ -35,25 +35,30 @@ export default function AdminApplications() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
-    setApplications(getApplications());
+    const fetchApplications = async () => {
+      const apps = await getApplications();
+      setApplications(apps);
+    };
+
+    fetchApplications();
   }, []);
 
-  const handleAcceptApplication = (id: number) => {
+  const handleAcceptApplication = async (id: number) => {
     try {
       const app = applications.find(a => a.id === id);
       if (!app) return;
-      
-      const updatedApp = updateApplication({
+
+      const updatedApp = await updateApplication({
         ...app,
         status: "Accepted"
       });
-      
+
       setApplications(applications.map(a => a.id === id ? updatedApp : a));
       toast({
         title: "Success",
         description: "Application accepted successfully!",
       });
-      
+
       // Close dialog if viewing this application
       if (selectedApplication?.id === id) {
         setSelectedApplication(updatedApp);
@@ -67,22 +72,22 @@ export default function AdminApplications() {
     }
   };
 
-  const handleRejectApplication = (id: number) => {
+  const handleRejectApplication = async (id: number) => {
     try {
       const app = applications.find(a => a.id === id);
       if (!app) return;
-      
-      const updatedApp = updateApplication({
+
+      const updatedApp = await updateApplication({
         ...app,
         status: "Rejected"
       });
-      
+
       setApplications(applications.map(a => a.id === id ? updatedApp : a));
       toast({
         title: "Success",
         description: "Application rejected successfully!",
       });
-      
+
       // Close dialog if viewing this application
       if (selectedApplication?.id === id) {
         setSelectedApplication(updatedApp);

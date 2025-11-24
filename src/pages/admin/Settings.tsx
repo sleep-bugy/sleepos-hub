@@ -28,8 +28,12 @@ export default function AdminSettings() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const settings = getSettings();
-    setFormData(settings);
+    const fetchSettings = async () => {
+      const settings = await getSettings();
+      setFormData(settings);
+    };
+
+    fetchSettings();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -47,12 +51,12 @@ export default function AdminSettings() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
     try {
-      updateSettings(formData);
+      await updateSettings(formData);
       toast({
         title: "Success",
         description: "Settings saved successfully!",

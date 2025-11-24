@@ -16,20 +16,26 @@ export default function DeviceDownload() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (deviceCodename) {
-      const devices = getActiveDevices();
-      const foundDevice = devices.find(d => d.codename === deviceCodename);
+    const fetchDevice = async () => {
+      if (deviceCodename) {
+        const devices = await getActiveDevices();
+        const foundDevice = devices.find(d => d.codename === deviceCodename);
 
-      if (foundDevice) {
-        setDevice(foundDevice);
+        if (foundDevice) {
+          // Load ROMs for the device
+          const roms = await getRomsForDevice(deviceCodename);
+          setDevice({ ...foundDevice, roms });
+        }
+
+        setLoading(false);
       }
+    };
 
-      setLoading(false);
-    }
+    fetchDevice();
   }, [deviceCodename]);
 
-  const handleDownload = (romId: number, downloadUrl: string) => {
-    updateDownloadCount(romId);
+  const handleDownload = async (romId: number, downloadUrl: string) => {
+    await updateDownloadCount(romId);
 
     // In a real app, you might want to use a more secure download tracking
     // For now, we'll just redirect to the download URL
