@@ -1,20 +1,14 @@
-// api/devices/[id].ts - Handle specific device operations and device roms using Supabase
+// api/devices/[id].ts - Handle specific device operations and device roms using Supabase REST API
 export const config = {
   runtime: 'edge',
 };
 
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client from environment variables
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
-
 export default async function handler(request: Request) {
-  if (!supabase) {
+  // Initialize environment variables
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return new Response(
       JSON.stringify({ error: 'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.' }),
       {
@@ -40,17 +34,20 @@ export default async function handler(request: Request) {
       if (method === 'GET') {
         // Get ROMs for specific device by codename
         try {
-          const { data, error } = await supabase
-            .from('roms')
-            .select('*')
-            .eq('device_codename', deviceIdentifier)
-            .order('id', { ascending: true });
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/roms?select=*&device_codename=eq.${deviceIdentifier}&order=id.asc`, {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          });
 
-          if (error) {
-            throw new Error(error.message);
+          if (!response.ok) {
+            throw new Error(`API request failed: ${response.status} ${response.statusText}`);
           }
 
-          return new Response(JSON.stringify(data || []), {
+          const data = await response.json();
+          return new Response(JSON.stringify(data), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
           });
@@ -66,9 +63,15 @@ export default async function handler(request: Request) {
         try {
           const newRomData = await request.json();
 
-          const { data, error } = await supabase
-            .from('roms')
-            .insert([{
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/roms`, {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
               device_codename: deviceIdentifier,
               rom_type: newRomData.romType,
               version: newRomData.version,
@@ -80,14 +83,14 @@ export default async function handler(request: Request) {
               status: newRomData.status,
               upload_date: newRomData.uploadDate || new Date().toISOString().split('T')[0],
               downloads: 0 // Initialize with 0 downloads
-            }])
-            .select()
-            .single();
+            }),
+          });
 
-          if (error) {
-            throw new Error(error.message);
+          if (!response.ok) {
+            throw new Error(`Failed to add ROM: ${response.status} ${response.statusText}`);
           }
 
+          const data = await response.json();
           return new Response(JSON.stringify(data), {
             status: 201,
             headers: { 'Content-Type': 'application/json' }
@@ -104,34 +107,44 @@ export default async function handler(request: Request) {
       // Handle operations on a specific device by ID or codename
       // First, check if the identifier is a number (ID) or string (codename)
       const isDeviceIdNumeric = !isNaN(Number(deviceIdentifier));
-      
+
       if (isDeviceIdNumeric) {
         // Handle by numeric ID
         const deviceId = parseInt(deviceIdentifier);
-        
+
         if (method === 'GET') {
           try {
-            const { data, error } = await supabase
-              .from('devices')
-              .select('*')
-              .eq('id', deviceId)
-              .single();
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/devices?select=*&id=eq.${deviceId}`, {
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+              },
+            });
 
-            if (error) {
-              if (error.code === 'PGRST116') {
+            if (!response.ok) {
+              if (response.status === 404) {
                 // Row not found
                 return new Response(JSON.stringify({ error: 'Device not found' }), {
                   status: 404,
                   headers: { 'Content-Type': 'application/json' }
                 });
               }
-              throw new Error(error.message);
+              throw new Error(`API request failed: ${response.status} ${response.statusText}`);
             }
 
-            return new Response(JSON.stringify(data), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            });
+            const data = await response.json();
+            if (Array.isArray(data) && data.length > 0) {
+              return new Response(JSON.stringify(data[0]), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+              });
+            } else {
+              return new Response(JSON.stringify({ error: 'Device not found' }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json' }
+              });
+            }
           } catch (error) {
             console.error('Error fetching device:', error);
             return new Response(JSON.stringify({ error: 'Failed to fetch device' }), {
@@ -143,22 +156,27 @@ export default async function handler(request: Request) {
           try {
             const updateData = await request.json();
 
-            const { data, error } = await supabase
-              .from('devices')
-              .update({
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/devices?id=eq.${deviceId}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              },
+              body: JSON.stringify({
                 name: updateData.name,
                 codename: updateData.codename,
                 status: updateData.status,
                 last_update: new Date().toISOString().split('T')[0]
-              })
-              .eq('id', deviceId)
-              .select()
-              .single();
+              }),
+            });
 
-            if (error) {
-              throw new Error(error.message);
+            if (!response.ok) {
+              throw new Error(`Failed to update device: ${response.status} ${response.statusText}`);
             }
 
+            const data = await response.json();
             return new Response(JSON.stringify(data), {
               status: 200,
               headers: { 'Content-Type': 'application/json' }
@@ -172,13 +190,17 @@ export default async function handler(request: Request) {
           }
         } else if (method === 'DELETE') {
           try {
-            const { error } = await supabase
-              .from('devices')
-              .delete()
-              .eq('id', deviceId);
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/devices?id=eq.${deviceId}`, {
+              method: 'DELETE',
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+              },
+            });
 
-            if (error) {
-              throw new Error(error.message);
+            if (!response.ok) {
+              throw new Error(`Failed to delete device: ${response.status} ${response.statusText}`);
             }
 
             return new Response(null, {
@@ -196,27 +218,37 @@ export default async function handler(request: Request) {
         // Handle by codename
         if (method === 'GET') {
           try {
-            const { data, error } = await supabase
-              .from('devices')
-              .select('*')
-              .eq('codename', deviceIdentifier)
-              .single();
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/devices?select=*&codename=eq.${deviceIdentifier}`, {
+              headers: {
+                'apikey': SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+              },
+            });
 
-            if (error) {
-              if (error.code === 'PGRST116') {
+            if (!response.ok) {
+              if (response.status === 404) {
                 // Row not found
                 return new Response(JSON.stringify({ error: 'Device not found' }), {
                   status: 404,
                   headers: { 'Content-Type': 'application/json' }
                 });
               }
-              throw new Error(error.message);
+              throw new Error(`API request failed: ${response.status} ${response.statusText}`);
             }
 
-            return new Response(JSON.stringify(data), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json' }
-            });
+            const data = await response.json();
+            if (Array.isArray(data) && data.length > 0) {
+              return new Response(JSON.stringify(data[0]), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+              });
+            } else {
+              return new Response(JSON.stringify({ error: 'Device not found' }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json' }
+              });
+            }
           } catch (error) {
             console.error('Error fetching device by codename:', error);
             return new Response(JSON.stringify({ error: 'Failed to fetch device' }), {

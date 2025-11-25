@@ -1,21 +1,14 @@
-// api/index.ts - Main API endpoint for non-device specific data using Supabase
+// api/index.ts - Main API endpoint for data operations using Supabase REST API
 export const config = {
   runtime: 'edge',
 };
 
-// Import Supabase client
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client from environment variables
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
-
 export default async function handler(request: Request) {
-  if (!supabase) {
+  // Initialize environment variables
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return new Response(
       JSON.stringify({ error: 'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.' }),
       {
@@ -51,16 +44,20 @@ export default async function handler(request: Request) {
           // Handle /api/roms - return all ROMs
           if (method === 'GET') {
             try {
-              const { data, error } = await supabase
-                .from('roms')
-                .select('*')
-                .order('id', { ascending: true });
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/roms?select=*`, {
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
               }
 
-              return new Response(JSON.stringify(data || []), {
+              const data = await response.json();
+              return new Response(JSON.stringify(data), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -80,16 +77,20 @@ export default async function handler(request: Request) {
         if (routeSegments.length === 1) {
           if (method === 'GET') {
             try {
-              const { data, error } = await supabase
-                .from('applications')
-                .select('*')
-                .order('id', { ascending: true });
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/applications?select=*`, {
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
               }
 
-              return new Response(JSON.stringify(data || []), {
+              const data = await response.json();
+              return new Response(JSON.stringify(data), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -104,10 +105,16 @@ export default async function handler(request: Request) {
             try {
               // Add new application
               const newApplicationData = await request.json();
-
-              const { data, error } = await supabase
-                .from('applications')
-                .insert([{
+              
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/applications`, {
+                method: 'POST',
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
                   name: newApplicationData.name,
                   email: newApplicationData.email,
                   role: newApplicationData.role,
@@ -116,15 +123,15 @@ export default async function handler(request: Request) {
                   cv: newApplicationData.cv || null,
                   status: 'Pending',
                   date: new Date().toISOString().split('T')[0]
-                }])
-                .select()
-                .single();
+                }),
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`Failed to add application: ${response.status} ${response.statusText}`);
               }
 
-              return new Response(JSON.stringify(data), {
+              const data = await response.json();
+              return new Response(JSON.stringify(Array.isArray(data) && data.length > 0 ? data[0] : data), {
                 status: 201,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -145,15 +152,21 @@ export default async function handler(request: Request) {
               headers: { 'Content-Type': 'application/json' }
             });
           }
-
+          
           if (method === 'PUT') {
             try {
               // Update application
               const updatedApp = await request.json();
-
-              const { data, error } = await supabase
-                .from('applications')
-                .update({
+              
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/applications?id=eq.${appId}`, {
+                method: 'PATCH',
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
                   name: updatedApp.name,
                   email: updatedApp.email,
                   role: updatedApp.role,
@@ -161,16 +174,15 @@ export default async function handler(request: Request) {
                   message: updatedApp.message,
                   cv: updatedApp.cv || null,
                   status: updatedApp.status
-                })
-                .eq('id', appId)
-                .select()
-                .single();
+                }),
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`Failed to update application: ${response.status} ${response.statusText}`);
               }
 
-              return new Response(JSON.stringify(data), {
+              const data = await response.json();
+              return new Response(JSON.stringify(Array.isArray(data) && data.length > 0 ? data[0] : data), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -190,16 +202,20 @@ export default async function handler(request: Request) {
         if (routeSegments.length === 1) {
           if (method === 'GET') {
             try {
-              const { data, error } = await supabase
-                .from('changelogs')
-                .select('*')
-                .order('id', { ascending: true });
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/changelogs?select=*`, {
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
               }
 
-              return new Response(JSON.stringify(data || []), {
+              const data = await response.json();
+              return new Response(JSON.stringify(data), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -214,25 +230,31 @@ export default async function handler(request: Request) {
             try {
               // Add new changelog
               const newChangelogData = await request.json();
-
-              const { data, error } = await supabase
-                .from('changelogs')
-                .insert([{
+              
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/changelogs`, {
+                method: 'POST',
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
                   device: newChangelogData.device,
                   rom_type: newChangelogData.romType,
                   version: newChangelogData.version,
                   date: newChangelogData.date,
                   changelog: newChangelogData.changelog,
                   status: newChangelogData.status
-                }])
-                .select()
-                .single();
+                }),
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`Failed to add changelog: ${response.status} ${response.statusText}`);
               }
 
-              return new Response(JSON.stringify(data), {
+              const data = await response.json();
+              return new Response(JSON.stringify(Array.isArray(data) && data.length > 0 ? data[0] : data), {
                 status: 201,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -253,31 +275,36 @@ export default async function handler(request: Request) {
               headers: { 'Content-Type': 'application/json' }
             });
           }
-
+          
           if (method === 'PUT') {
             try {
               // Update changelog
               const updatedChangelog = await request.json();
-
-              const { data, error } = await supabase
-                .from('changelogs')
-                .update({
+              
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/changelogs?id=eq.${changelogId}`, {
+                method: 'PATCH',
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify({
                   device: updatedChangelog.device,
                   rom_type: updatedChangelog.romType,
                   version: updatedChangelog.version,
                   date: updatedChangelog.date,
                   changelog: updatedChangelog.changelog,
                   status: updatedChangelog.status
-                })
-                .eq('id', changelogId)
-                .select()
-                .single();
+                }),
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`Failed to update changelog: ${response.status} ${response.statusText}`);
               }
 
-              return new Response(JSON.stringify(data), {
+              const data = await response.json();
+              return new Response(JSON.stringify(Array.isArray(data) && data.length > 0 ? data[0] : data), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -291,13 +318,17 @@ export default async function handler(request: Request) {
           } else if (method === 'DELETE') {
             try {
               // Delete changelog
-              const { error } = await supabase
-                .from('changelogs')
-                .delete()
-                .eq('id', changelogId);
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/changelogs?id=eq.${changelogId}`, {
+                method: 'DELETE',
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`Failed to delete changelog: ${response.status} ${response.statusText}`);
               }
 
               return new Response(null, { status: 204 });
@@ -317,41 +348,56 @@ export default async function handler(request: Request) {
         if (routeSegments.length === 1) {
           if (method === 'GET') {
             try {
-              const { data, error } = await supabase
-                .from('settings')
-                .select('*')
-                .single();
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/settings?select=*&limit=1`, {
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+              });
 
-              if (error && error.code !== 'PGRST116') { // PGRST116 means row not found
-                throw new Error(error.message);
+              if (!response.ok) {
+                // If settings don't exist, return defaults
+                if (response.status === 404 || response.status === 406) {
+                  return new Response(JSON.stringify({
+                    id: 1,
+                    site_name: "Project Sleep",
+                    site_description: "Custom ROMs crafted with care for the community.",
+                    contact_email: "contact@projectsleep.com",
+                    discord_link: "https://discord.gg/sK433E4jq",
+                    telegram_link: "https://t.me/SleepOsUser",
+                    download_server: "https://downloads.projectsleep.com",
+                    enable_downloads: true,
+                    enable_team_applications: true,
+                  }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                  });
+                }
+                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
               }
 
-              // If settings don't exist, return defaults
-              if (!data) {
-                return new Response(JSON.stringify({
-                  id: 1,
-                  site_name: "Project Sleep",
-                  site_description: "Custom ROMs crafted with care for the community.",
-                  contact_email: "contact@projectsleep.com",
-                  discord_link: "https://discord.gg/sK433E4jq",
-                  telegram_link: "https://t.me/SleepOsUser",
-                  download_server: "https://downloads.projectsleep.com",
-                  enable_downloads: true,
-                  enable_team_applications: true,
-                }), {
-                  status: 200,
-                  headers: { 'Content-Type': 'application/json' }
-                });
-              }
-
-              return new Response(JSON.stringify(data), {
+              const data = await response.json();
+              const settings = Array.isArray(data) && data.length > 0 ? data[0] : data;
+              return new Response(JSON.stringify(settings), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
               });
             } catch (error) {
               console.error('Error fetching settings:', error);
-              return new Response(JSON.stringify({ error: 'Failed to fetch settings' }), {
-                status: 500,
+              // Return default settings in case of error
+              return new Response(JSON.stringify({
+                id: 1,
+                site_name: "Project Sleep",
+                site_description: "Custom ROMs crafted with care for the community.",
+                contact_email: "contact@projectsleep.com",
+                discord_link: "https://discord.gg/sK433E4jq",
+                telegram_link: "https://t.me/SleepOsUser",
+                download_server: "https://downloads.projectsleep.com",
+                enable_downloads: true,
+                enable_team_applications: true,
+              }), {
+                status: 200,
                 headers: { 'Content-Type': 'application/json' }
               });
             }
@@ -359,21 +405,27 @@ export default async function handler(request: Request) {
             try {
               // Update or upsert settings
               const newSettings = await request.json();
-
-              const { data, error } = await supabase
-                .from('settings')
-                .upsert([{
-                  id: 1, // Assuming single settings record with id = 1
+              
+              const response = await fetch(`${SUPABASE_URL}/rest/v1/settings`, {
+                method: newSettings.id ? 'PATCH' : 'POST',
+                headers: {
+                  'apikey': SUPABASE_ANON_KEY,
+                  'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation, resolution=merge-duplicates'
+                },
+                body: JSON.stringify({
+                  id: 1, // Single settings record with id = 1
                   ...newSettings
-                }])
-                .select()
-                .single();
+                }),
+              });
 
-              if (error) {
-                throw new Error(error.message);
+              if (!response.ok) {
+                throw new Error(`Failed to update settings: ${response.status} ${response.statusText}`);
               }
 
-              return new Response(JSON.stringify(data), {
+              const data = await response.json();
+              return new Response(JSON.stringify(Array.isArray(data) && data.length > 0 ? data[0] : data), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
               });
@@ -406,7 +458,7 @@ export default async function handler(request: Request) {
             // Update user (in production, this would be tied to session)
             try {
               const userData = await request.json();
-
+              
               // In a real app, this would update the authenticated user's profile
               // For this demo, we'll just return the provided data
               return new Response(JSON.stringify(userData), {
@@ -429,11 +481,5 @@ export default async function handler(request: Request) {
   return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
     status: 404,
     headers: { 'Content-Type': 'application/json' }
-  });
-}  }
-
-  return new Response(JSON.stringify({ error: "Endpoint not found" }), {
-    status: 404,
-    headers: { "Content-Type": "application/json" }
   });
 }
