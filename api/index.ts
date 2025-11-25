@@ -12,10 +12,10 @@ export default async function handler(request: Request) {
   const pathSegments = path.split('/').filter(Boolean);
 
   if (pathSegments.length >= 1 && pathSegments[0] === 'api') {
-    // Remove 'api' from path segments
-    pathSegments.shift();
+    // FIX: Gunakan slice(1) daripada shift() agar TypeScript tidak bingung (narrowing issue)
+    const routeSegments = pathSegments.slice(1);
 
-    if (pathSegments.length === 0) {
+    if (routeSegments.length === 0) {
       // Return default data
       return new Response(JSON.stringify({ message: "API root endpoint" }), {
         status: 200,
@@ -23,11 +23,11 @@ export default async function handler(request: Request) {
       });
     }
 
-    const endpoint = pathSegments[0];
+    const endpoint = routeSegments[0];
 
     switch (endpoint) {
       case 'roms':
-        if (pathSegments.length === 1) {
+        if (routeSegments.length === 1) {
           // Handle /api/roms - return all ROMs
           if (method === 'GET') {
             // For now, returning empty array - this would connect to database in production
@@ -41,7 +41,7 @@ export default async function handler(request: Request) {
 
       case 'applications':
         // Handle /api/applications
-        if (pathSegments.length === 1) {
+        if (routeSegments.length === 1) {
           if (method === 'GET') {
             // For now, returning empty array - this would connect to database in production
             return new Response(JSON.stringify([]), {
@@ -57,7 +57,7 @@ export default async function handler(request: Request) {
               headers: { 'Content-Type': 'application/json' }
             });
           }
-        } else if (pathSegments.length === 2) {
+        } else if (routeSegments.length === 2) {
           // Handle /api/applications/:id
           if (method === 'PUT') {
             // Update application
@@ -73,7 +73,7 @@ export default async function handler(request: Request) {
 
       case 'changelogs':
         // Handle /api/changelogs
-        if (pathSegments.length === 1) {
+        if (routeSegments.length === 1) {
           if (method === 'GET') {
             // For now, returning empty array - this would connect to database in production
             return new Response(JSON.stringify([]), {
@@ -89,7 +89,7 @@ export default async function handler(request: Request) {
               headers: { 'Content-Type': 'application/json' }
             });
           }
-        } else if (pathSegments.length === 2) {
+        } else if (routeSegments.length === 2) {
           // Handle /api/changelogs/:id
           if (method === 'PUT') {
             // Update changelog
@@ -108,7 +108,7 @@ export default async function handler(request: Request) {
 
       case 'settings':
         // Handle /api/settings
-        if (pathSegments.length === 1) {
+        if (routeSegments.length === 1) {
           if (method === 'GET') {
             // Return default settings
             return new Response(JSON.stringify({
@@ -138,7 +138,7 @@ export default async function handler(request: Request) {
 
       case 'user':
         // Handle /api/user (get current user)
-        if (pathSegments.length === 1) {
+        if (routeSegments.length === 1) {
           if (method === 'GET') {
             // Return default user
             return new Response(JSON.stringify({
