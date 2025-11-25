@@ -59,7 +59,6 @@ export default async function handler(request: Request) {
           }
         } else if (pathSegments.length === 2) {
           // Handle /api/applications/:id
-          // Extract application ID from pathSegments[1]
           if (method === 'PUT') {
             // Update application
             const updatedApp = await request.json();
@@ -168,13 +167,5 @@ export default async function handler(request: Request) {
   return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
     status: 404,
     headers: { 'Content-Type': 'application/json' }
-  });
-}
-
-  }
-
-  return new Response(JSON.stringify({ error: "Endpoint not found" }), {
-    status: 404,
-    headers: { "Content-Type": "application/json" }
   });
 }
