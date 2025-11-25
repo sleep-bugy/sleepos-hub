@@ -1,23 +1,22 @@
-// dataService.ts
+// dataService.ts - Service layer for API integration with Supabase
 import { Device, Rom, Application, Changelog, SiteSettings, User } from './types';
 import { dbOperations } from './lib/database';
 
-// Device functions
+// Device functions with direct Supabase integration
 export const getDevices = async (): Promise<Device[]> => {
   try {
     const devices = await dbOperations.devices.getAll();
-    // Map the database response to fit the Device type expected by the app
+    // Map the database response to match the expected Device type
     return devices.map(device => ({
       id: device.id,
       name: device.name,
       codename: device.codename,
       status: device.status as 'Active' | 'Inactive',
       lastUpdate: device.last_update,
-      roms: device.roms || [] // Default to empty array if null
+      roms: device.roms || []
     }));
   } catch (error) {
-    console.error('Error fetching devices:', error);
-    // Return empty array in case of error
+    console.error('Error fetching devices from Supabase:', error);
     return [];
   }
 };
@@ -34,7 +33,7 @@ export const addDevice = async (device: Omit<Device, 'id' | 'roms' | 'lastUpdate
       roms: result.roms || []
     };
   } catch (error) {
-    console.error('Error adding device:', error);
+    console.error('Error adding device to Supabase:', error);
     throw error;
   }
 };
@@ -51,29 +50,28 @@ export const updateDevice = async (device: Device): Promise<Device> => {
       roms: result.roms || []
     };
   } catch (error) {
-    console.error('Error updating device:', error);
+    console.error('Error updating device in Supabase:', error);
     throw error;
   }
 };
 
 export const deleteDevice = async (id: number): Promise<boolean> => {
   try {
-    await dbOperations.devices.delete(id);
-    return true;
+    return await dbOperations.devices.delete(id);
   } catch (error) {
-    console.error('Error deleting device:', error);
+    console.error('Error deleting device from Supabase:', error);
     return false;
   }
 };
 
-// ROM functions within devices
+// ROM functions with direct Supabase integration
 export const getRoms = async (): Promise<Rom[]> => {
   try {
     const roms = await dbOperations.roms.getAll();
-    // Map the database response to fit the Rom type expected by the app
+    // Map the database response to match the expected Rom type
     return roms.map(rom => ({
       id: rom.id,
-      device: rom.device || "", // Default to empty string if null
+      device: rom.device || "",
       deviceCodename: rom.device_codename,
       maintainer: rom.maintainer,
       romType: rom.rom_type as 'SleepOS' | 'AOSP' | 'Port',
@@ -87,7 +85,7 @@ export const getRoms = async (): Promise<Rom[]> => {
       notes: rom.notes || undefined
     }));
   } catch (error) {
-    console.error('Error fetching roms:', error);
+    console.error('Error fetching ROMs from Supabase:', error);
     return [];
   }
 };
@@ -95,10 +93,10 @@ export const getRoms = async (): Promise<Rom[]> => {
 export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> => {
   try {
     const roms = await dbOperations.roms.getByDevice(deviceCodename);
-    // Map the database response to fit the Rom type expected by the app
+    // Map the database response to match the expected Rom type
     return roms.map(rom => ({
       id: rom.id,
-      device: rom.device || "", // Default to empty string if null
+      device: rom.device || "",
       deviceCodename: rom.device_codename,
       maintainer: rom.maintainer,
       romType: rom.rom_type as 'SleepOS' | 'AOSP' | 'Port',
@@ -112,7 +110,7 @@ export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> =
       notes: rom.notes || undefined
     }));
   } catch (error) {
-    console.error('Error fetching roms for device:', error);
+    console.error('Error fetching ROMs for device from Supabase:', error);
     return [];
   }
 };
@@ -120,18 +118,18 @@ export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> =
 export const addRomToDevice = async (deviceCodename: string, rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename'>): Promise<Rom | null> => {
   try {
     const romData = {
-      deviceCodename: deviceCodename,
-      romType: rom.romType,
+      device_codename: deviceCodename,
+      rom_type: rom.romType,
       version: rom.version,
       size: rom.size,
       maintainer: rom.maintainer,
-      downloadUrl: rom.downloadUrl,
+      download_url: rom.downloadUrl,
       changelog: rom.changelog,
-      notes: rom.notes,
+      notes: rom.notes || null,
       status: rom.status,
-      uploadDate: rom.uploadDate
+      upload_date: rom.uploadDate
     };
-
+    
     const result = await dbOperations.roms.create(romData);
     return {
       id: result.id,
@@ -149,29 +147,28 @@ export const addRomToDevice = async (deviceCodename: string, rom: Omit<Rom, 'id'
       notes: result.notes || undefined
     };
   } catch (error) {
-    console.error('Error adding rom to device:', error);
+    console.error('Error adding ROM to device in Supabase:', error);
     return null;
   }
 };
 
 export const updateRomForDevice = async (deviceCodename: string, rom: Rom): Promise<Rom | null> => {
-  // The database operations don't currently support updating ROMs directly
-  // This would need to be implemented in the dbOperations
-  console.error('updateRomForDevice not implemented in database operations');
+  // This operation isn't directly implemented in the current dbOperations
+  // because updating individual ROMs requires a different approach
+  console.error('updateRomForDevice not implemented in current Supabase operations');
   return null;
 };
 
 export const deleteRomFromDevice = async (deviceCodename: string, romId: number): Promise<boolean> => {
-  // The database operations don't currently support deleting ROMs directly
-  // This would need to be implemented in the dbOperations
-  console.error('deleteRomFromDevice not implemented in database operations');
+  // This operation isn't directly implemented in the current dbOperations
+  // because deleting individual ROMs requires a different approach
+  console.error('deleteRomFromDevice not implemented in current Supabase operations');
   return false;
 };
 
-// Maintaining backward compatibility for admin panel
-// These functions now need to work with the new data structure
+// Admin panel compatibility functions
 export const addRom = async (rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename'>): Promise<Rom> => {
-  // Find the device codename if not provided
+  // Find device codename if not provided
   let deviceCodename = rom.deviceCodename;
   if (!deviceCodename && rom.device) {
     // Try to find codename from device name
@@ -183,7 +180,6 @@ export const addRom = async (rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename
   }
 
   if (!deviceCodename) {
-    // If we still don't have a device codename, throw an error
     throw new Error('Device codename is required to add a ROM');
   }
 
@@ -195,16 +191,14 @@ export const addRom = async (rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename
 };
 
 export const updateRom = async (rom: Rom): Promise<Rom> => {
-  // The database operations don't support updating individual ROMs directly
-  // This would need to be implemented in the dbOperations
-  console.error('updateRom not implemented in database operations');
-  throw new Error('updateRom not implemented in database operations');
+  // This isn't directly supported in the current implementation
+  console.error('updateRom not implemented in current Supabase operations');
+  throw new Error('updateRom not implemented in current Supabase operations');
 };
 
 export const deleteRom = async (id: number): Promise<boolean> => {
-  // The database operations don't support deleting individual ROMs directly
-  // This would need to be implemented in the dbOperations
-  console.error('deleteRom not implemented in database operations');
+  // This isn't directly supported in the current implementation
+  console.error('deleteRom not implemented in current Supabase operations');
   return false;
 };
 
@@ -221,11 +215,11 @@ export const getActiveDevices = async (): Promise<Device[]> => {
   });
 };
 
-// Application functions
+// Application functions with direct Supabase integration
 export const getApplications = async (): Promise<Application[]> => {
   try {
     const applications = await dbOperations.applications.getAll();
-    // Map the database response to fit the Application type expected by the app
+    // Map the database response to match the expected Application type
     return applications.map(app => ({
       id: app.id,
       name: app.name,
@@ -238,7 +232,7 @@ export const getApplications = async (): Promise<Application[]> => {
       cv: app.cv || undefined
     }));
   } catch (error) {
-    console.error('Error fetching applications:', error);
+    console.error('Error fetching applications from Supabase:', error);
     return [];
   }
 };
@@ -251,9 +245,9 @@ export const addApplication = async (application: Omit<Application, 'id' | 'date
       role: application.role,
       portfolio: application.portfolio,
       message: application.message,
-      cv: application.cv
+      cv: application.cv || null
     };
-
+    
     const result = await dbOperations.applications.create(appData);
     return {
       id: result.id,
@@ -267,7 +261,7 @@ export const addApplication = async (application: Omit<Application, 'id' | 'date
       cv: result.cv || undefined
     };
   } catch (error) {
-    console.error('Error adding application:', error);
+    console.error('Error adding application to Supabase:', error);
     throw error;
   }
 };
@@ -287,27 +281,27 @@ export const updateApplication = async (application: Application): Promise<Appli
       cv: result.cv || undefined
     };
   } catch (error) {
-    console.error('Error updating application:', error);
+    console.error('Error updating application in Supabase:', error);
     throw error;
   }
 };
 
-// Changelog functions
+// Changelog functions with direct Supabase integration
 export const getChangelogs = async (): Promise<Changelog[]> => {
   try {
     const changelogs = await dbOperations.changelogs.getAll();
-    // Map the database response to fit the Changelog type expected by the app
-    return changelogs.map(changelog => ({
-      id: changelog.id,
-      device: changelog.device,
-      romType: changelog.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: changelog.version,
-      date: changelog.date,
-      changelog: changelog.changelog,
-      status: changelog.status as 'Draft' | 'Published'
+    // Map the database response to match the expected Changelog type
+    return changelogs.map(log => ({
+      id: log.id,
+      device: log.device,
+      romType: log.rom_type as 'SleepOS' | 'AOSP' | 'Port',
+      version: log.version,
+      date: log.date,
+      changelog: log.changelog,
+      status: log.status as 'Draft' | 'Published'
     }));
   } catch (error) {
-    console.error('Error fetching changelogs:', error);
+    console.error('Error fetching changelogs from Supabase:', error);
     return [];
   }
 };
@@ -316,13 +310,13 @@ export const addChangelog = async (changelog: Omit<Changelog, 'id'>): Promise<Ch
   try {
     const changelogData = {
       device: changelog.device,
-      romType: changelog.romType,
+      rom_type: changelog.romType,
       version: changelog.version,
       date: changelog.date,
       changelog: changelog.changelog,
       status: changelog.status
     };
-
+    
     const result = await dbOperations.changelogs.create(changelogData);
     return {
       id: result.id,
@@ -334,26 +328,24 @@ export const addChangelog = async (changelog: Omit<Changelog, 'id'>): Promise<Ch
       status: result.status as 'Draft' | 'Published'
     };
   } catch (error) {
-    console.error('Error adding changelog:', error);
+    console.error('Error adding changelog to Supabase:', error);
     throw error;
   }
 };
 
 export const updateChangelog = async (changelog: Changelog): Promise<Changelog> => {
-  // The database operations don't currently support updating changelogs directly
-  // This would need to be implemented in the dbOperations
-  console.error('updateChangelog not implemented in database operations');
-  throw new Error('updateChangelog not implemented in database operations');
+  // This operation isn't implemented in the current dbOperations
+  console.error('updateChangelog not implemented in current Supabase operations');
+  throw new Error('updateChangelog not implemented in current Supabase operations');
 };
 
 export const deleteChangelog = async (id: number): Promise<boolean> => {
-  // The database operations don't currently support deleting changelogs directly
-  // This would need to be implemented in the dbOperations
-  console.error('deleteChangelog not implemented in database operations');
+  // This operation isn't implemented in the current dbOperations
+  console.error('deleteChangelog not implemented in current Supabase operations');
   return false;
 };
 
-// Settings functions
+// Settings functions with direct Supabase integration
 export const getSettings = async (): Promise<SiteSettings> => {
   try {
     const settings = await dbOperations.settings.get();
@@ -368,7 +360,7 @@ export const getSettings = async (): Promise<SiteSettings> => {
       enableTeamApplications: settings.enable_team_applications,
     };
   } catch (error) {
-    console.error('Error fetching settings:', error);
+    console.error('Error fetching settings from Supabase:', error);
     // Return default settings in case of error
     return {
       siteName: "Project Sleep",
@@ -395,7 +387,7 @@ export const updateSettings = async (settings: SiteSettings): Promise<SiteSettin
       enable_downloads: settings.enableDownloads,
       enable_team_applications: settings.enableTeamApplications,
     };
-
+    
     const result = await dbOperations.settings.update(settingsData);
     return {
       siteName: result.site_name,
@@ -408,12 +400,12 @@ export const updateSettings = async (settings: SiteSettings): Promise<SiteSettin
       enableTeamApplications: result.enable_team_applications,
     };
   } catch (error) {
-    console.error('Error updating settings:', error);
+    console.error('Error updating settings in Supabase:', error);
     throw error;
   }
 };
 
-// User functions
+// User functions with direct Supabase integration
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const user = await dbOperations.users.get();
@@ -423,11 +415,11 @@ export const getCurrentUser = async (): Promise<User | null> => {
     return {
       id: user.id,
       email: user.email,
-      password: user.password,
+      password: user.password, // In production, this would be hashed
       role: user.role as 'admin' | 'moderator' | 'user'
     };
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error('Error fetching user from Supabase:', error);
     return null;
   }
 };
@@ -440,7 +432,7 @@ export const updateUser = async (user: User): Promise<User> => {
       password: user.password,
       role: user.role
     };
-
+    
     const result = await dbOperations.users.update(userData);
     return {
       id: result.id,
@@ -449,13 +441,13 @@ export const updateUser = async (user: User): Promise<User> => {
       role: result.role as 'admin' | 'moderator' | 'user'
     };
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error('Error updating user in Supabase:', error);
     throw error;
   }
 };
 
 // Helper functions
 export const updateDownloadCount = async (romId: number): Promise<void> => {
-  // For now, this is still mocked as download counting would require backend implementation
-  // This would typically update the download count in the backend
+  // For now, this is still mocked as download counting would require more complex backend implementation
+  // This would typically update the download count in the database
 };
