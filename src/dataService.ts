@@ -1,175 +1,129 @@
-// dataService.ts - Service layer for API integration with Supabase
+// dataService.ts - Service layer for API integration with backend endpoints
 import { Device, Rom, Application, Changelog, SiteSettings, User } from './types';
-import { dbOperations } from './lib/database';
 
-// Device functions using database operations
+// API base URL - will use relative paths for Vercel deployment
+const API_BASE = '';
+
+// Function to make API calls
+async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+  }
+
+  if (response.status === 204) {
+    // No content response
+    return null as T;
+  }
+
+  return await response.json();
+}
+
+// Device functions
 export const getDevices = async (): Promise<Device[]> => {
   try {
-    const devices = await dbOperations.devices.getAll();
-    // Map the database response to match the expected Device type
-    return devices.map(device => ({
-      id: device.id,
-      name: device.name,
-      codename: device.codename,
-      status: device.status as 'Active' | 'Inactive',
-      lastUpdate: device.last_update,
-      roms: device.roms || []
-    }));
+    return await apiCall<Device[]>('/api/devices');
   } catch (error) {
-    console.error('Error fetching devices from Supabase:', error);
+    console.error('Error fetching devices:', error);
+    // Return empty array in case of error
     return [];
   }
 };
 
 export const addDevice = async (device: Omit<Device, 'id' | 'roms' | 'lastUpdate'>): Promise<Device> => {
   try {
-    const result = await dbOperations.devices.create(device);
-    return {
-      id: result.id,
-      name: result.name,
-      codename: result.codename,
-      status: result.status as 'Active' | 'Inactive',
-      lastUpdate: result.last_update,
-      roms: result.roms || []
-    };
+    return await apiCall<Device>('/api/devices', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: device.name,
+        codename: device.codename,
+        status: device.status,
+      }),
+    });
   } catch (error) {
-    console.error('Error adding device to Supabase:', error);
+    console.error('Error adding device:', error);
     throw error;
   }
 };
 
 export const updateDevice = async (device: Device): Promise<Device> => {
   try {
-    const result = await dbOperations.devices.update(device.id, device);
-    return {
-      id: result.id,
-      name: result.name,
-      codename: result.codename,
-      status: result.status as 'Active' | 'Inactive',
-      lastUpdate: result.last_update,
-      roms: result.roms || []
-    };
+    return await apiCall<Device>(`/api/devices/${device.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(device),
+    });
   } catch (error) {
-    console.error('Error updating device in Supabase:', error);
+    console.error('Error updating device:', error);
     throw error;
   }
 };
 
 export const deleteDevice = async (id: number): Promise<boolean> => {
   try {
-    return await dbOperations.devices.delete(id);
+    await apiCall(`/api/devices/${id}`, {
+      method: 'DELETE',
+    });
+    return true;
   } catch (error) {
-    console.error('Error deleting device from Supabase:', error);
+    console.error('Error deleting device:', error);
     return false;
   }
 };
 
-// ROM functions within devices using database operations
+// ROM functions within devices
 export const getRoms = async (): Promise<Rom[]> => {
   try {
-    const roms = await dbOperations.roms.getAll();
-    // Map the database response to match the expected Rom type
-    return roms.map(rom => ({
-      id: rom.id,
-      device: rom.device || "",
-      deviceCodename: rom.device_codename,
-      maintainer: rom.maintainer,
-      romType: rom.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: rom.version,
-      size: rom.size,
-      downloads: rom.downloads || 0,
-      status: rom.status as 'Active' | 'Inactive',
-      uploadDate: rom.upload_date,
-      downloadUrl: rom.download_url,
-      changelog: rom.changelog,
-      notes: rom.notes || undefined
-    }));
+    return await apiCall<Rom[]>('/api/roms');
   } catch (error) {
-    console.error('Error fetching roms from Supabase:', error);
+    console.error('Error fetching roms:', error);
     return [];
   }
 };
 
 export const getRomsForDevice = async (deviceCodename: string): Promise<Rom[]> => {
   try {
-    const roms = await dbOperations.roms.getByDevice(deviceCodename);
-    // Map the database response to match the expected Rom type
-    return roms.map(rom => ({
-      id: rom.id,
-      device: rom.device || "",
-      deviceCodename: rom.device_codename,
-      maintainer: rom.maintainer,
-      romType: rom.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: rom.version,
-      size: rom.size,
-      downloads: rom.downloads || 0,
-      status: rom.status as 'Active' | 'Inactive',
-      uploadDate: rom.upload_date,
-      downloadUrl: rom.download_url,
-      changelog: rom.changelog,
-      notes: rom.notes || undefined
-    }));
+    return await apiCall<Rom[]>(`/api/devices/${deviceCodename}/roms`);
   } catch (error) {
-    console.error('Error fetching roms for device from Supabase:', error);
+    console.error('Error fetching roms for device:', error);
     return [];
   }
 };
 
 export const addRomToDevice = async (deviceCodename: string, rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename'>): Promise<Rom | null> => {
   try {
-    const romData = {
-      deviceCodename: deviceCodename,
-      romType: rom.romType,
-      version: rom.version,
-      size: rom.size,
-      maintainer: rom.maintainer,
-      downloadUrl: rom.downloadUrl,
-      changelog: rom.changelog,
-      notes: rom.notes,
-      status: rom.status,
-      uploadDate: rom.uploadDate
-    };
-    
-    const result = await dbOperations.roms.create(romData);
-    return {
-      id: result.id,
-      device: result.device || "",
-      deviceCodename: result.device_codename,
-      maintainer: result.maintainer,
-      romType: result.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: result.version,
-      size: result.size,
-      downloads: result.downloads || 0,
-      status: result.status as 'Active' | 'Inactive',
-      uploadDate: result.upload_date,
-      downloadUrl: result.download_url,
-      changelog: result.changelog,
-      notes: result.notes || undefined
-    };
+    return await apiCall<Rom>(`/api/devices/${deviceCodename}/roms`, {
+      method: 'POST',
+      body: JSON.stringify(rom),
+    });
   } catch (error) {
-    console.error('Error adding rom to device in Supabase:', error);
+    console.error('Error adding rom to device:', error);
     return null;
   }
 };
 
 export const updateRomForDevice = async (deviceCodename: string, rom: Rom): Promise<Rom | null> => {
-  // The API implementation for updating individual ROMs needs to handle the device context
-  // For now, we'll use the direct ROM update function
-  console.error('updateRomForDevice not implemented, using direct update');
+  // For now, this operation is not implemented in the API routes
+  console.error('updateRomForDevice not implemented in API routes');
   return null;
 };
 
 export const deleteRomFromDevice = async (deviceCodename: string, romId: number): Promise<boolean> => {
-  // The API implementation for deleting individual ROMs needs to handle the device context
-  // For now, we'll use the direct ROM delete function
-  console.error('deleteRomFromDevice not implemented, using direct delete');
+  // For now, this operation is not implemented in the API routes
+  console.error('deleteRomFromDevice not implemented in API routes');
   return false;
 };
 
 // Maintaining backward compatibility for admin panel
-// These functions now work with the new Supabase database structure
+// These functions now need to work with the new data structure
 export const addRom = async (rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename'>): Promise<Rom> => {
-  // Find device codename if not provided
+  // Find the device codename if not provided
   let deviceCodename = rom.deviceCodename;
   if (!deviceCodename && rom.device) {
     // Try to find codename from device name
@@ -181,6 +135,7 @@ export const addRom = async (rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename
   }
 
   if (!deviceCodename) {
+    // If we still don't have a device codename, throw an error
     throw new Error('Device codename is required to add a ROM');
   }
 
@@ -192,36 +147,17 @@ export const addRom = async (rom: Omit<Rom, 'id' | 'downloads' | 'deviceCodename
 };
 
 export const updateRom = async (rom: Rom): Promise<Rom> => {
-  try {
-    const result = await dbOperations.roms.update(rom.id, rom);
-    return {
-      id: result.id,
-      device: result.device || "",
-      deviceCodename: result.device_codename,
-      maintainer: result.maintainer,
-      romType: result.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: result.version,
-      size: result.size,
-      downloads: result.downloads || 0,
-      status: result.status as 'Active' | 'Inactive',
-      uploadDate: result.upload_date,
-      downloadUrl: result.download_url,
-      changelog: result.changelog,
-      notes: result.notes || undefined
-    };
-  } catch (error) {
-    console.error('Error updating ROM in Supabase:', error);
-    throw error;
-  }
+  // The API routes don't support updating individual ROMs directly
+  // This would need to be implemented in the API routes
+  console.error('updateRom not implemented in API routes');
+  throw new Error('updateRom not implemented in API routes');
 };
 
 export const deleteRom = async (id: number): Promise<boolean> => {
-  try {
-    return await dbOperations.roms.delete(id);
-  } catch (error) {
-    console.error('Error deleting ROM from Supabase:', error);
-    return false;
-  }
+  // The API routes don't support deleting individual ROMs directly
+  // This would need to be implemented in the API routes
+  console.error('deleteRom not implemented in API routes');
+  return false;
 };
 
 // Get devices with active ROMs only
@@ -237,156 +173,92 @@ export const getActiveDevices = async (): Promise<Device[]> => {
   });
 };
 
-// Application functions using database operations
+// Application functions
 export const getApplications = async (): Promise<Application[]> => {
   try {
-    const applications = await dbOperations.applications.getAll();
-    // Map the database response to match the expected Application type
-    return applications.map(app => ({
-      id: app.id,
-      name: app.name,
-      email: app.email,
-      role: app.role,
-      portfolio: app.portfolio,
-      message: app.message,
-      status: app.status as 'Pending' | 'Reviewed' | 'Accepted' | 'Rejected',
-      date: app.date,
-      cv: app.cv || undefined
-    }));
+    return await apiCall<Application[]>('/api/applications');
   } catch (error) {
-    console.error('Error fetching applications from Supabase:', error);
+    console.error('Error fetching applications:', error);
     return [];
   }
 };
 
 export const addApplication = async (application: Omit<Application, 'id' | 'date' | 'status'>): Promise<Application> => {
   try {
-    const appData = {
-      name: application.name,
-      email: application.email,
-      role: application.role,
-      portfolio: application.portfolio,
-      message: application.message,
-      cv: application.cv || null,
-      status: 'Pending',
-      date: new Date().toISOString().split('T')[0],
-    };
-    
-    const result = await dbOperations.applications.create(appData);
-    return {
-      id: result.id,
-      name: result.name,
-      email: result.email,
-      role: result.role,
-      portfolio: result.portfolio,
-      message: result.message,
-      status: result.status as 'Pending' | 'Reviewed' | 'Accepted' | 'Rejected',
-      date: result.date,
-      cv: result.cv || undefined
-    };
+    return await apiCall<Application>('/api/applications', {
+      method: 'POST',
+      body: JSON.stringify(application),
+    });
   } catch (error) {
-    console.error('Error adding application to Supabase:', error);
+    console.error('Error adding application:', error);
     throw error;
   }
 };
 
 export const updateApplication = async (application: Application): Promise<Application> => {
   try {
-    const result = await dbOperations.applications.update(application.id, application);
-    return {
-      id: result.id,
-      name: result.name,
-      email: result.email,
-      role: result.role,
-      portfolio: result.portfolio,
-      message: result.message,
-      status: result.status as 'Pending' | 'Reviewed' | 'Accepted' | 'Rejected',
-      date: result.date,
-      cv: result.cv || undefined
-    };
+    return await apiCall<Application>(`/api/applications/${application.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(application),
+    });
   } catch (error) {
-    console.error('Error updating application in Supabase:', error);
+    console.error('Error updating application:', error);
     throw error;
   }
 };
 
-// Changelog functions using database operations
+// Changelog functions
 export const getChangelogs = async (): Promise<Changelog[]> => {
   try {
-    const changelogs = await dbOperations.changelogs.getAll();
-    // Map the database response to match the expected Changelog type
-    return changelogs.map(log => ({
-      id: log.id,
-      device: log.device,
-      romType: log.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: log.version,
-      date: log.date,
-      changelog: log.changelog,
-      status: log.status as 'Draft' | 'Published'
-    }));
+    return await apiCall<Changelog[]>('/api/changelogs');
   } catch (error) {
-    console.error('Error fetching changelogs from Supabase:', error);
+    console.error('Error fetching changelogs:', error);
     return [];
   }
 };
 
 export const addChangelog = async (changelog: Omit<Changelog, 'id'>): Promise<Changelog> => {
   try {
-    const changelogData = {
-      device: changelog.device,
-      romType: changelog.romType,
-      version: changelog.version,
-      date: changelog.date,
-      changelog: changelog.changelog,
-      status: changelog.status
-    };
-    
-    const result = await dbOperations.changelogs.create(changelogData);
-    return {
-      id: result.id,
-      device: result.device,
-      romType: result.rom_type as 'SleepOS' | 'AOSP' | 'Port',
-      version: result.version,
-      date: result.date,
-      changelog: result.changelog,
-      status: result.status as 'Draft' | 'Published'
-    };
+    return await apiCall<Changelog>('/api/changelogs', {
+      method: 'POST',
+      body: JSON.stringify(changelog),
+    });
   } catch (error) {
-    console.error('Error adding changelog to Supabase:', error);
+    console.error('Error adding changelog:', error);
     throw error;
   }
 };
 
 export const updateChangelog = async (changelog: Changelog): Promise<Changelog> => {
-  // Update changelog functionality would need to be implemented
-  // This would require implementing update in dbOperations
-  console.error('updateChangelog not implemented in current database operations');
-  throw new Error('updateChangelog not implemented in current database operations');
+  try {
+    return await apiCall<Changelog>(`/api/changelogs/${changelog.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(changelog),
+    });
+  } catch (error) {
+    console.error('Error updating changelog:', error);
+    throw error;
+  }
 };
 
 export const deleteChangelog = async (id: number): Promise<boolean> => {
-  // Delete changelog functionality would need to be implemented
-  // This would require implementing delete in dbOperations
-  console.error('deleteChangelog not implemented in current database operations');
-  return false;
+  try {
+    await apiCall(`/api/changelogs/${id}`, {
+      method: 'DELETE',
+    });
+    return true;
+  } catch (error) {
+    console.error('Error deleting changelog:', error);
+    return false;
+  }
 };
 
-// Settings functions using database operations
+// Settings functions
 export const getSettings = async (): Promise<SiteSettings> => {
   try {
-    const settings = await dbOperations.settings.get();
-    return {
-      siteName: settings.site_name,
-      siteDescription: settings.site_description,
-      contactEmail: settings.contact_email,
-      discordLink: settings.discord_link,
-      telegramLink: settings.telegram_link,
-      downloadServer: settings.download_server,
-      enableDownloads: settings.enable_downloads,
-      enableTeamApplications: settings.enable_team_applications,
-    };
+    return await apiCall<SiteSettings>('/api/settings');
   } catch (error) {
-    console.error('Error fetching settings from Supabase:', error);
+    console.error('Error fetching settings:', error);
     // Return default settings in case of error
     return {
       siteName: "Project Sleep",
@@ -403,64 +275,34 @@ export const getSettings = async (): Promise<SiteSettings> => {
 
 export const updateSettings = async (settings: SiteSettings): Promise<SiteSettings> => {
   try {
-    const settingsData = {
-      site_name: settings.siteName,
-      site_description: settings.siteDescription,
-      contact_email: settings.contactEmail,
-      discord_link: settings.discordLink,
-      telegram_link: settings.telegramLink,
-      download_server: settings.downloadServer,
-      enable_downloads: settings.enableDownloads,
-      enable_team_applications: settings.enableTeamApplications,
-    };
-    
-    const result = await dbOperations.settings.update(settingsData);
-    return {
-      siteName: result.site_name,
-      siteDescription: result.site_description,
-      contactEmail: result.contact_email,
-      discordLink: result.discord_link,
-      telegramLink: result.telegram_link,
-      downloadServer: result.download_server,
-      enableDownloads: result.enable_downloads,
-      enableTeamApplications: result.enable_team_applications,
-    };
+    return await apiCall<SiteSettings>('/api/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
   } catch (error) {
-    console.error('Error updating settings in Supabase:', error);
+    console.error('Error updating settings:', error);
     throw error;
   }
 };
 
-// User functions using database operations
+// User functions
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const user = await dbOperations.users.get();
-    if (!user) {
-      return null;
-    }
-    return {
-      id: user.id,
-      email: user.email,
-      password: user.password, // In production, this would be hashed
-      role: user.role as 'admin' | 'moderator' | 'user'
-    };
+    return await apiCall<User>('/api/user');
   } catch (error) {
-    console.error('Error fetching user from Supabase:', error);
+    console.error('Error fetching user:', error);
     return null;
   }
 };
 
 export const updateUser = async (user: User): Promise<User> => {
   try {
-    const result = await dbOperations.users.update(user);
-    return {
-      id: result.id,
-      email: result.email,
-      password: result.password,
-      role: result.role as 'admin' | 'moderator' | 'user'
-    };
+    return await apiCall<User>('/api/user', {
+      method: 'PUT',
+      body: JSON.stringify(user),
+    });
   } catch (error) {
-    console.error('Error updating user in Supabase:', error);
+    console.error('Error updating user:', error);
     throw error;
   }
 };
