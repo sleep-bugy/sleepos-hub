@@ -339,6 +339,5 @@ export const dbOperations = {
         throw error;
       }
     }
-    }
   }
 };
