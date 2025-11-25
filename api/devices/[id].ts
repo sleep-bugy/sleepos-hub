@@ -1,4 +1,5 @@
 // api/devices/[id].ts - Handle specific device operations and device roms
+// This file handles both /api/devices/[id] and /api/devices/[codename]/roms
 export const config = {
   runtime: 'edge',
 };
@@ -34,19 +35,22 @@ export default async function handler(request: Request) {
   const url = new URL(request.url);
   const path = url.pathname;
   const pathSegments = path.split('/').filter(Boolean);
-  
-  // Extract the device identifier and potential action
+
+  // This handles paths like:
+  // /api/devices/[id] -> for device CRUD operations
+  // /api/devices/[codename]/roms -> for ROM operations on a specific device
   if (pathSegments.length >= 3 && pathSegments[0] === 'api' && pathSegments[1] === 'devices') {
-    const deviceIdentifier = pathSegments[2];
+    const deviceParam = pathSegments[2];
     const action = pathSegments[3]; // Could be 'roms' or undefined
-    
+
     const { method } = request;
 
+    // Check if this is a ROM operation (e.g., /api/devices/cepheus/roms)
     if (action === 'roms') {
       // Handle /api/devices/[codename]/roms
       if (method === 'GET') {
         // Get ROMs for specific device by codename
-        const device = mockDevices.find(d => d.codename === deviceIdentifier);
+        const device = mockDevices.find(d => d.codename === deviceParam);
         if (!device) {
           return new Response(JSON.stringify({ error: 'Device not found' }), {
             status: 404,
@@ -58,94 +62,101 @@ export default async function handler(request: Request) {
           headers: { 'Content-Type': 'application/json' }
         });
       } else if (method === 'POST') {
-        // Add ROM to specific device
+        // Add ROM to specific device - THIS IS WHERE THE ISSUE WAS
         const newRomData = await request.json();
-        const deviceIndex = mockDevices.findIndex(d => d.codename === deviceIdentifier);
-        
+        const deviceIndex = mockDevices.findIndex(d => d.codename === deviceParam);
+
         if (deviceIndex === -1) {
           return new Response(JSON.stringify({ error: 'Device not found' }), {
             status: 404,
             headers: { 'Content-Type': 'application/json' }
           });
         }
-        
+
         // Add new ROM to the device
         const allRoms = mockDevices.flatMap(d => d.roms || []);
         const newId = Math.max(...allRoms.map(r => r.id || 0), 0) + 1;
-        
+
         const newRom = {
           ...newRomData,
+          device: mockDevices[deviceIndex].name, // Include device name
           id: newId,
           downloads: 0,
         };
-        
+
         if (!mockDevices[deviceIndex].roms) {
           mockDevices[deviceIndex].roms = [];
         }
-        
+
         mockDevices[deviceIndex].roms.push(newRom);
         mockDevices[deviceIndex].lastUpdate = new Date().toISOString().split('T')[0];
-        
+
         return new Response(JSON.stringify(newRom), {
           status: 201,
           headers: { 'Content-Type': 'application/json' }
         });
       }
     } else {
-      // Handle /api/devices/[id] where deviceIdentifier is the numeric ID
-      const deviceId = parseInt(deviceIdentifier);
-      if (isNaN(deviceId)) {
-        return new Response(JSON.stringify({ error: 'Invalid device ID' }), {
+      // Handle device operations: /api/devices/[idOrCodename]
+      // First, try to parse as numeric ID
+      const deviceId = parseInt(deviceParam);
+      const isNumericId = !isNaN(deviceId);
+      
+      if (isNumericId) {
+        // Handle operations based on numeric ID
+        const deviceIndex = mockDevices.findIndex(d => d.id === deviceId);
+
+        if (method === 'GET') {
+          if (deviceIndex === -1) {
+            return new Response(JSON.stringify({ error: 'Device not found' }), {
+              status: 404,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+
+          return new Response(JSON.stringify(mockDevices[deviceIndex]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else if (method === 'PUT') {
+          if (deviceIndex === -1) {
+            return new Response(JSON.stringify({ error: 'Device not found' }), {
+              status: 404,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+
+          // Update an existing device
+          const updateData = await request.json();
+          mockDevices[deviceIndex] = {
+            ...mockDevices[deviceIndex],
+            ...updateData,
+            id: deviceId
+          };
+
+          return new Response(JSON.stringify(mockDevices[deviceIndex]), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else if (method === 'DELETE') {
+          if (deviceIndex === -1) {
+            return new Response(JSON.stringify({ error: 'Device not found' }), {
+              status: 404,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+
+          mockDevices.splice(deviceIndex, 1);
+          return new Response(null, {
+            status: 204
+          });
+        }
+      } else {
+        // Treat as codename for operations that might need it
+        // But for basic device CRUD by ID, we expect numeric IDs
+        return new Response(JSON.stringify({ error: 'Device ID must be numeric for this operation' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      const deviceIndex = mockDevices.findIndex(d => d.id === deviceId);
-      
-      if (method === 'GET') {
-        if (deviceIndex === -1) {
-          return new Response(JSON.stringify({ error: 'Device not found' }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        return new Response(JSON.stringify(mockDevices[deviceIndex]), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      } else if (method === 'PUT') {
-        if (deviceIndex === -1) {
-          return new Response(JSON.stringify({ error: 'Device not found' }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        // Update an existing device
-        const updateData = await request.json();
-        mockDevices[deviceIndex] = {
-          ...mockDevices[deviceIndex],
-          ...updateData,
-          id: deviceId
-        };
-        
-        return new Response(JSON.stringify(mockDevices[deviceIndex]), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      } else if (method === 'DELETE') {
-        if (deviceIndex === -1) {
-          return new Response(JSON.stringify({ error: 'Device not found' }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-        
-        mockDevices.splice(deviceIndex, 1);
-        return new Response(null, {
-          status: 204
         });
       }
     }
