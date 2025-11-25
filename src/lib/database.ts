@@ -1,13 +1,13 @@
 // Database configuration for Supabase integration with strict API calls only
 import { createClient } from '@supabase/supabase-js';
-import { 
-  DeviceDb, 
-  RomDb, 
-  ApplicationDb, 
-  ChangelogDb, 
-  SettingsDb, 
-  UserDb 
-} from '../config/databaseTypes';
+import {
+  DeviceDb,
+  RomDb,
+  ApplicationDb,
+  ChangelogDb,
+  SettingsDb,
+  UserDb
+} from './databaseTypes';
 
 // Initialize Supabase client with environment variables
 // For Vercel deployment, only NEXT_PUBLIC_ variables are available
@@ -221,6 +221,67 @@ export const dbOperations = {
         return data;
       } catch (error) {
         console.error('Error creating ROM:', error);
+        throw error;
+      }
+    },
+
+    // Update a ROM
+    update: async (id: number, romData: Partial<RomDb>): Promise<RomDb> => {
+      if (!isSupabaseAvailable()) {
+        throw new Error('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment variables.');
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('roms')
+          .update({
+            device_codename: romData.device_codename,
+            rom_type: romData.rom_type,
+            version: romData.version,
+            size: romData.size,
+            maintainer: romData.maintainer,
+            download_url: romData.download_url,
+            changelog: romData.changelog,
+            notes: romData.notes,
+            status: romData.status,
+            upload_date: romData.upload_date,
+          })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating ROM in Supabase:', error);
+          throw new Error(`Failed to update ROM: ${error.message}`);
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Error updating ROM:', error);
+        throw error;
+      }
+    },
+
+    // Delete a ROM
+    delete: async (id: number): Promise<boolean> => {
+      if (!isSupabaseAvailable()) {
+        throw new Error('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment variables.');
+      }
+
+      try {
+        const { error } = await supabase
+          .from('roms')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          console.error('Error deleting ROM from Supabase:', error);
+          throw new Error(`Failed to delete ROM: ${error.message}`);
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Error deleting ROM:', error);
         throw error;
       }
     }

@@ -4,18 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Edit,
+  Trash2,
   Smartphone,
   Search,
   Download
@@ -25,6 +25,13 @@ import { Device } from "@/types";
 import { getDevices, addDevice, updateDevice, deleteDevice } from "@/dataService";
 import { useToast } from "@/hooks/use-toast";
 
+// Type definition for form data
+interface FormData {
+  name: string;
+  codename: string;
+  status: "Active" | "Inactive";
+}
+
 export default function AdminDevices() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -32,10 +39,10 @@ export default function AdminDevices() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     codename: "",
-    status: "Active" as "Active" | "Inactive",
+    status: "Active",
   });
 
   useEffect(() => {
@@ -47,7 +54,7 @@ export default function AdminDevices() {
     fetchDevices();
   }, []);
 
-  const filteredDevices = devices.filter(device => 
+  const filteredDevices = devices.filter(device =>
     device.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     device.codename.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -150,15 +157,6 @@ export default function AdminDevices() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingDevice) {
-      handleUpdateDevice();
-    } else {
-      handleAddDevice();
-    }
-  };
-
   return (
     <div className="p-6">
       <motion.div
@@ -171,7 +169,7 @@ export default function AdminDevices() {
             <h1 className="text-3xl font-bold">Manage Devices</h1>
             <p className="text-muted-foreground">Add, edit, and manage supported devices</p>
           </div>
-          
+
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => {
@@ -186,14 +184,21 @@ export default function AdminDevices() {
               <DialogHeader>
                 <DialogTitle>{editingDevice ? "Edit Device" : "Add New Device"}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (editingDevice) {
+                  handleUpdateDevice();
+                } else {
+                  handleAddDevice();
+                }
+              }}>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="name" className="text-right">Device Name</label>
-                    <Input 
-                      id="name" 
+                    <Input
+                      id="name"
                       name="name"
-                      className="col-span-3" 
+                      className="col-span-3"
                       value={formData.name}
                       onChange={handleFormChange}
                       required
@@ -201,10 +206,10 @@ export default function AdminDevices() {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="codename" className="text-right">Codename</label>
-                    <Input 
-                      id="codename" 
+                    <Input
+                      id="codename"
                       name="codename"
-                      className="col-span-3" 
+                      className="col-span-3"
                       value={formData.codename}
                       onChange={handleFormChange}
                       required
@@ -212,8 +217,8 @@ export default function AdminDevices() {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="status" className="text-right">Status</label>
-                    <select 
-                      id="status" 
+                    <select
+                      id="status"
                       name="status"
                       className="col-span-3 bg-background border border-input rounded-md p-2"
                       value={formData.status}
@@ -274,8 +279,8 @@ export default function AdminDevices() {
                     </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        device.status === "Active" 
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
+                        device.status === "Active"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                           : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                       }`}>
                         {device.status}
@@ -284,15 +289,15 @@ export default function AdminDevices() {
                     <TableCell>{device.lastUpdate}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleEditClick(device)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDeleteDevice(device.id)}
                         >

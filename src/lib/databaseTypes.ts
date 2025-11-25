@@ -5,19 +5,19 @@ export interface DeviceDb {
   codename: string;
   status: string; // 'Active' | 'Inactive' in the database
   last_update: string; // Date string in YYYY-MM-DD format
-  roms: any[]; // Array of ROM objects serialized as JSON
+  roms?: any[]; // Array of ROM objects serialized as JSON (may be null in some cases)
 }
 
 export interface RomDb {
   id: number;
-  device_codename: string; // Foreign key reference
+  device_codename: string; // Foreign key reference to devices table
   rom_type: string; // 'SleepOS' | 'AOSP' | 'Port' in the database
   version: string;
   size: string;
   maintainer: string;
   download_url: string;
   changelog: string;
-  notes: string | null;
+  notes?: string | null;
   status: string; // 'Active' | 'Inactive' in the database
   upload_date: string; // Date string in YYYY-MM-DD format
   downloads: number; // Number of downloads
@@ -31,7 +31,7 @@ export interface ApplicationDb {
   role: string;
   portfolio: string;
   message: string;
-  cv: string | null;
+  cv?: string | null;
   status: string; // 'Pending' | 'Reviewed' | 'Accepted' | 'Rejected' in the database
   date: string; // Date string in YYYY-MM-DD format
 }
