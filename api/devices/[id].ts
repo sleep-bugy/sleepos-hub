@@ -1,163 +1,230 @@
-// api/devices/[id].ts - Handle specific device operations and device roms
-// This file handles both /api/devices/[id] and /api/devices/[codename]/roms
+// api/devices/[id].ts - Handle specific device operations and device roms using Supabase
 export const config = {
   runtime: 'edge',
 };
 
-// Store for demo purposes - in production, this would connect to a real database
-let mockDevices = [
-  {
-    id: 1,
-    name: "Xiaomi Mi 9",
-    codename: "cepheus",
-    status: "Active",
-    lastUpdate: "2025-11-15",
-    roms: [
-      { id: 1, device: "Xiaomi Mi 9", deviceCodename: "cepheus", maintainer: "John Doe", romType: "SleepOS", version: "v2.3.1", size: "1.2 GB", downloads: 1234, status: "Active", uploadDate: "2025-11-15", downloadUrl: "https://example.com/cepheus-sleepos-v2.3.1.zip", changelog: "# v2.3.1\n- Fixed battery drain\n- Improved performance\n- Updated security patches" },
-      { id: 2, device: "Xiaomi Mi 9", deviceCodename: "cepheus", maintainer: "Jane Smith", romType: "AOSP", version: "v1.5.0", size: "980 MB", downloads: 892, status: "Active", uploadDate: "2025-11-10", downloadUrl: "https://example.com/cepheus-aosp-v1.5.0.zip", changelog: "# v1.5.0\n- Pure AOSP experience\n- Latest Android updates" }
-    ]
-  },
-  {
-    id: 2,
-    name: "POCO X3 NFC",
-    codename: "surya",
-    status: "Active",
-    lastUpdate: "2025-11-16",
-    roms: [
-      { id: 3, device: "POCO X3 NFC", deviceCodename: "surya", maintainer: "Jane Smith", romType: "SleepOS", version: "v1.2.0", size: "1.8 GB", downloads: 567, status: "Active", uploadDate: "2025-11-20", downloadUrl: "https://example.com/surya-sleepos-v1.2.0.zip", changelog: "# v1.2.0\n- Improved camera performance\n- Enhanced battery life" },
-      { id: 4, device: "POCO X3 NFC", deviceCodename: "surya", maintainer: "Alex Johnson", romType: "AOSP", version: "12.2", size: "1.5 GB", downloads: 321, status: "Active", uploadDate: "2025-11-18", downloadUrl: "https://example.com/surya-aosp-12.2.zip", changelog: "# 12.2\n- Updated to Android 12.2\n- Security patches up to Nov 2025" },
-      { id: 5, device: "POCO X3 NFC", deviceCodename: "surya", maintainer: "Sarah Lee", romType: "Port", version: "v3.0.1", size: "2.1 GB", downloads: 123, status: "Active", uploadDate: "2025-11-15", downloadUrl: "https://example.com/surya-port-v3.0.1.zip", changelog: "# v3.0.1\n- Ported OnePlus camera features\n- Added OnePlus gallery app" }
-    ]
-  }
-];
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client from environment variables
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 export default async function handler(request: Request) {
+  if (!supabase) {
+    return new Response(
+      JSON.stringify({ error: 'Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
   const url = new URL(request.url);
   const path = url.pathname;
   const pathSegments = path.split('/').filter(Boolean);
 
-  // This handles paths like:
-  // /api/devices/[id] -> for device CRUD operations
-  // /api/devices/[codename]/roms -> for ROM operations on a specific device
+  // Extract the device identifier and potential action
   if (pathSegments.length >= 3 && pathSegments[0] === 'api' && pathSegments[1] === 'devices') {
-    const deviceParam = pathSegments[2];
+    const deviceIdentifier = pathSegments[2];
     const action = pathSegments[3]; // Could be 'roms' or undefined
 
     const { method } = request;
 
-    // Check if this is a ROM operation (e.g., /api/devices/cepheus/roms)
     if (action === 'roms') {
       // Handle /api/devices/[codename]/roms
       if (method === 'GET') {
         // Get ROMs for specific device by codename
-        const device = mockDevices.find(d => d.codename === deviceParam);
-        if (!device) {
-          return new Response(JSON.stringify({ error: 'Device not found' }), {
-            status: 404,
+        try {
+          const { data, error } = await supabase
+            .from('roms')
+            .select('*')
+            .eq('device_codename', deviceIdentifier)
+            .order('id', { ascending: true });
+
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          return new Response(JSON.stringify(data || []), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch (error) {
+          console.error('Error fetching ROMs for device:', error);
+          return new Response(JSON.stringify({ error: 'Failed to fetch ROMs for device' }), {
+            status: 500,
             headers: { 'Content-Type': 'application/json' }
           });
         }
-        return new Response(JSON.stringify(device.roms || []), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
       } else if (method === 'POST') {
-        // Add ROM to specific device - THIS IS WHERE THE ISSUE WAS
-        const newRomData = await request.json();
-        const deviceIndex = mockDevices.findIndex(d => d.codename === deviceParam);
+        // Add ROM to specific device
+        try {
+          const newRomData = await request.json();
 
-        if (deviceIndex === -1) {
-          return new Response(JSON.stringify({ error: 'Device not found' }), {
-            status: 404,
+          const { data, error } = await supabase
+            .from('roms')
+            .insert([{
+              device_codename: deviceIdentifier,
+              rom_type: newRomData.romType,
+              version: newRomData.version,
+              size: newRomData.size,
+              maintainer: newRomData.maintainer,
+              download_url: newRomData.downloadUrl,
+              changelog: newRomData.changelog,
+              notes: newRomData.notes || null,
+              status: newRomData.status,
+              upload_date: newRomData.uploadDate || new Date().toISOString().split('T')[0],
+              downloads: 0 // Initialize with 0 downloads
+            }])
+            .select()
+            .single();
+
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          return new Response(JSON.stringify(data), {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch (error) {
+          console.error('Error adding ROM to device:', error);
+          return new Response(JSON.stringify({ error: 'Failed to add ROM to device' }), {
+            status: 500,
             headers: { 'Content-Type': 'application/json' }
           });
         }
-
-        // Add new ROM to the device
-        const allRoms = mockDevices.flatMap(d => d.roms || []);
-        const newId = Math.max(...allRoms.map(r => r.id || 0), 0) + 1;
-
-        const newRom = {
-          ...newRomData,
-          device: mockDevices[deviceIndex].name, // Include device name
-          id: newId,
-          downloads: 0,
-        };
-
-        if (!mockDevices[deviceIndex].roms) {
-          mockDevices[deviceIndex].roms = [];
-        }
-
-        mockDevices[deviceIndex].roms.push(newRom);
-        mockDevices[deviceIndex].lastUpdate = new Date().toISOString().split('T')[0];
-
-        return new Response(JSON.stringify(newRom), {
-          status: 201,
-          headers: { 'Content-Type': 'application/json' }
-        });
       }
     } else {
-      // Handle device operations: /api/devices/[idOrCodename]
-      // First, try to parse as numeric ID
-      const deviceId = parseInt(deviceParam);
-      const isNumericId = !isNaN(deviceId);
+      // Handle operations on a specific device by ID or codename
+      // First, check if the identifier is a number (ID) or string (codename)
+      const isDeviceIdNumeric = !isNaN(Number(deviceIdentifier));
       
-      if (isNumericId) {
-        // Handle operations based on numeric ID
-        const deviceIndex = mockDevices.findIndex(d => d.id === deviceId);
-
+      if (isDeviceIdNumeric) {
+        // Handle by numeric ID
+        const deviceId = parseInt(deviceIdentifier);
+        
         if (method === 'GET') {
-          if (deviceIndex === -1) {
-            return new Response(JSON.stringify({ error: 'Device not found' }), {
-              status: 404,
+          try {
+            const { data, error } = await supabase
+              .from('devices')
+              .select('*')
+              .eq('id', deviceId)
+              .single();
+
+            if (error) {
+              if (error.code === 'PGRST116') {
+                // Row not found
+                return new Response(JSON.stringify({ error: 'Device not found' }), {
+                  status: 404,
+                  headers: { 'Content-Type': 'application/json' }
+                });
+              }
+              throw new Error(error.message);
+            }
+
+            return new Response(JSON.stringify(data), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          } catch (error) {
+            console.error('Error fetching device:', error);
+            return new Response(JSON.stringify({ error: 'Failed to fetch device' }), {
+              status: 500,
               headers: { 'Content-Type': 'application/json' }
             });
           }
-
-          return new Response(JSON.stringify(mockDevices[deviceIndex]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          });
         } else if (method === 'PUT') {
-          if (deviceIndex === -1) {
-            return new Response(JSON.stringify({ error: 'Device not found' }), {
-              status: 404,
+          try {
+            const updateData = await request.json();
+
+            const { data, error } = await supabase
+              .from('devices')
+              .update({
+                name: updateData.name,
+                codename: updateData.codename,
+                status: updateData.status,
+                last_update: new Date().toISOString().split('T')[0]
+              })
+              .eq('id', deviceId)
+              .select()
+              .single();
+
+            if (error) {
+              throw new Error(error.message);
+            }
+
+            return new Response(JSON.stringify(data), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          } catch (error) {
+            console.error('Error updating device:', error);
+            return new Response(JSON.stringify({ error: 'Failed to update device' }), {
+              status: 500,
               headers: { 'Content-Type': 'application/json' }
             });
           }
-
-          // Update an existing device
-          const updateData = await request.json();
-          mockDevices[deviceIndex] = {
-            ...mockDevices[deviceIndex],
-            ...updateData,
-            id: deviceId
-          };
-
-          return new Response(JSON.stringify(mockDevices[deviceIndex]), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          });
         } else if (method === 'DELETE') {
-          if (deviceIndex === -1) {
-            return new Response(JSON.stringify({ error: 'Device not found' }), {
-              status: 404,
+          try {
+            const { error } = await supabase
+              .from('devices')
+              .delete()
+              .eq('id', deviceId);
+
+            if (error) {
+              throw new Error(error.message);
+            }
+
+            return new Response(null, {
+              status: 204
+            });
+          } catch (error) {
+            console.error('Error deleting device:', error);
+            return new Response(JSON.stringify({ error: 'Failed to delete device' }), {
+              status: 500,
               headers: { 'Content-Type': 'application/json' }
             });
           }
-
-          mockDevices.splice(deviceIndex, 1);
-          return new Response(null, {
-            status: 204
-          });
         }
       } else {
-        // Treat as codename for operations that might need it
-        // But for basic device CRUD by ID, we expect numeric IDs
-        return new Response(JSON.stringify({ error: 'Device ID must be numeric for this operation' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        // Handle by codename
+        if (method === 'GET') {
+          try {
+            const { data, error } = await supabase
+              .from('devices')
+              .select('*')
+              .eq('codename', deviceIdentifier)
+              .single();
+
+            if (error) {
+              if (error.code === 'PGRST116') {
+                // Row not found
+                return new Response(JSON.stringify({ error: 'Device not found' }), {
+                  status: 404,
+                  headers: { 'Content-Type': 'application/json' }
+                });
+              }
+              throw new Error(error.message);
+            }
+
+            return new Response(JSON.stringify(data), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          } catch (error) {
+            console.error('Error fetching device by codename:', error);
+            return new Response(JSON.stringify({ error: 'Failed to fetch device' }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+        }
       }
     }
   }
